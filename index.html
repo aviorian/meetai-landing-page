@@ -724,6 +724,8 @@
       padding: 0 8px 8px;
       overflow-x: auto;
       scrollbar-width: none;
+      min-width: 0;
+      max-width: 100%;
     }
     .toast-strip::-webkit-scrollbar { display: none; }
 
@@ -1290,7 +1292,8 @@
       .hero-cta-row { flex-direction: column; }
       .btn-primary, .btn-ghost { justify-content: center; }
       .section { padding: 48px max(18px, 5vw); }
-      .toast-strip { display: none; }
+      .toast-strip { padding: 0 8px 8px; }
+      .alert-toast { width: 200px; }
       .footer-bottom { flex-direction: column; align-items: flex-start; }
     }
 
@@ -1471,6 +1474,7 @@
     .db-chart-svg {
       display: block;
       width: 100%;
+      height: auto;
       overflow: visible;
     }
 
@@ -1716,7 +1720,7 @@
               <span class="hero-meta-label">Supervisor:</span>
               <span class="hero-meta-value">Prof. Dr. Mehmet Devrim Akça</span>
             </div>
-            <div class="hero-meta-course">COMP/SOFT 4902 &nbsp;·&nbsp; Işık University &nbsp;·&nbsp; 2025–2026</div>
+            <div class="hero-meta-course">Işık University &nbsp;·&nbsp; 2025–2026</div>
           </div>
           <div class="hero-cta-row">
             <a href="#how-it-works" class="btn-primary">
@@ -1849,7 +1853,7 @@
               <span class="db-card-title">Speaking Activity</span>
               <span class="db-card-meta" style="color:var(--accent)">avg 67%</span>
             </div>
-            <svg class="db-chart-svg" height="140" viewBox="0 0 500 140" preserveAspectRatio="none">
+            <svg class="db-chart-svg" viewBox="0 0 500 140" preserveAspectRatio="xMidYMid meet">
               <!-- grid lines + y labels -->
               <line x1="38" y1="112" x2="488" y2="112" stroke="var(--border-subtle)" stroke-width="0.5" stroke-dasharray="3,4"/>
               <text x="32" y="112" text-anchor="end" dominant-baseline="middle" style="font-size:10px;fill:var(--tx-3);font-family:var(--font-mono)">0</text>
@@ -1879,7 +1883,7 @@
               <circle cx="488" cy="37" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--accent);stroke-width:1.5"/>
               <!-- x labels -->
               <text x="38"  y="135" style="font-size:10px;fill:var(--tx-3);font-family:var(--font-mono)">0:00</text>
-              <text x="488" y="135" text-anchor="end" style="font-size:10px;fill:var(--tx-3);font-family:var(--font-mono)">20:00</text>
+              <text x="488" y="135" text-anchor="end" style="font-size:10px;fill:var(--tx-3);font-family:var(--font-mono)">28:42</text>
             </svg>
           </div>
 
@@ -1890,7 +1894,7 @@
               <span class="db-card-title">Focus Level</span>
               <span class="db-card-meta" style="color:var(--purple)">avg 78%</span>
             </div>
-            <svg class="db-chart-svg" height="140" viewBox="0 0 500 140" preserveAspectRatio="none">
+            <svg class="db-chart-svg" viewBox="0 0 500 140" preserveAspectRatio="xMidYMid meet">
               <line x1="38" y1="112" x2="488" y2="112" stroke="var(--border-subtle)" stroke-width="0.5" stroke-dasharray="3,4"/>
               <text x="32" y="112" text-anchor="end" dominant-baseline="middle" style="font-size:10px;fill:var(--tx-3);font-family:var(--font-mono)">0</text>
               <line x1="38" y1="87" x2="488" y2="87" stroke="var(--border-subtle)" stroke-width="0.5" stroke-dasharray="3,4"/>
@@ -1915,7 +1919,7 @@
               <circle cx="443" cy="32" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--purple);stroke-width:1.5"/>
               <circle cx="488" cy="28" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--purple);stroke-width:1.5"/>
               <text x="38"  y="135" style="font-size:10px;fill:var(--tx-3);font-family:var(--font-mono)">0:00</text>
-              <text x="488" y="135" text-anchor="end" style="font-size:10px;fill:var(--tx-3);font-family:var(--font-mono)">20:00</text>
+              <text x="488" y="135" text-anchor="end" style="font-size:10px;fill:var(--tx-3);font-family:var(--font-mono)">28:42</text>
             </svg>
           </div>
 
@@ -1926,7 +1930,7 @@
               <span class="db-card-title">Agenda Adherence</span>
               <span class="db-card-meta" style="color:var(--green)">avg 83%</span>
             </div>
-            <svg class="db-chart-svg" height="140" viewBox="0 0 500 140" preserveAspectRatio="none">
+            <svg class="db-chart-svg" viewBox="0 0 500 140" preserveAspectRatio="xMidYMid meet">
               <line x1="38" y1="92" x2="488" y2="92" stroke="var(--border-subtle)" stroke-width="0.5" stroke-dasharray="3,4"/>
               <text x="32" y="92" text-anchor="end" dominant-baseline="middle" style="font-size:10px;fill:var(--tx-3);font-family:var(--font-mono)">20</text>
               <line x1="38" y1="71" x2="488" y2="71" stroke="var(--border-subtle)" stroke-width="0.5" stroke-dasharray="3,4"/>
@@ -1949,7 +1953,7 @@
               <circle cx="443" cy="23" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--green);stroke-width:1.5"/>
               <circle cx="488" cy="21" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--green);stroke-width:1.5"/>
               <text x="38"  y="135" style="font-size:10px;fill:var(--tx-3);font-family:var(--font-mono)">0:00</text>
-              <text x="488" y="135" text-anchor="end" style="font-size:10px;fill:var(--tx-3);font-family:var(--font-mono)">20:00</text>
+              <text x="488" y="135" text-anchor="end" style="font-size:10px;fill:var(--tx-3);font-family:var(--font-mono)">28:42</text>
             </svg>
           </div>
 
@@ -1958,6 +1962,9 @@
 
       <!-- Sidebar: logo + participant tiles (desktop) -->
       <div class="meeting-sidebar">
+        <div class="meeting-sidebar-logo">
+          <img src="isik_logo.png" alt="Işık University">
+        </div>
         <!-- Metric rings — Live Metrics -->
         <!-- circ = 2π×38 = 238.76. offset = circ × (1-pct) -->
         <!-- Speaking 64%: offset=86. Focus 78%: offset=53. Agenda 87%: offset=31 -->
@@ -2005,9 +2012,6 @@
           </div>
         </div>
 
-        <div class="meeting-sidebar-logo">
-          <img src="isik_logo.png" alt="Işık University">
-        </div>
         <div class="meeting-sidetiles">
 
           <!-- Fatih A. -->
@@ -2184,7 +2188,7 @@
       <div class="toolbar-btn toolbar-btn--end"></div>
       <div class="toolbar-btn toolbar-btn--off"></div>
       <div class="toolbar-btn toolbar-btn--off"></div>
-      <div class="toolbar-participants">5 participants</div>
+      <div class="toolbar-participants">3 participants</div>
       <button class="toolbar-participants-toggle" id="participants-toggle" aria-expanded="false">
         <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 2a2.5 2.5 0 1 1 0 5A2.5 2.5 0 0 1 8 2zm0 7c3 0 5.5 1.3 5.5 2.5V13h-11v-1.5C2.5 10.3 5 9 8 9z" fill="currentColor"/></svg>
         Participants
@@ -2260,7 +2264,7 @@
     <!-- Vision -->
     <div class="pipeline-card pipeline-card--vision reveal reveal-d1">
       <div class="pipeline-card-viz">
-        <svg viewBox="10 12 180 58" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+        <svg viewBox="0 2 200 80" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
           <line x1="100" y1="4" x2="100" y2="76" stroke="rgba(54,126,255,0.12)" stroke-width="0.8"/>
           <line x1="4" y1="40" x2="196" y2="40" stroke="rgba(54,126,255,0.12)" stroke-width="0.8"/>
           <text x="4" y="32" fill="rgba(54,126,255,0.38)" font-size="7" font-family="DM Sans,sans-serif">yaw</text>
@@ -2497,14 +2501,14 @@
 <section class="section" id="team">
   <div class="reveal"><span class="section-label">The Team</span></div>
   <div class="reveal reveal-d1"><h2 class="section-title">Meet the People Behind MeetAI</h2></div>
-  <p class="section-body reveal reveal-d2">We are senior Computer Engineering students at Işık University. Reach out — we'd love to hear from you.</p>
+  <p class="section-body reveal reveal-d2">We are senior Software and Computer Engineering students at Işık University. Reach out — we'd love to hear from you.</p>
 
   <div class="team-grid">
 
     <div class="team-card reveal reveal-d1">
       <div class="team-avatar">FA</div>
       <div class="team-name">Fatih Altınışık</div>
-      <div class="team-role">Computer Engineering, Işık University</div>
+      <div class="team-role">Software Engineering, Işık University</div>
       <div class="team-links">
         <a class="team-link" href="mailto:fatih_altinisik@outlook.com">✉ Email</a>
         <a class="team-link" href="https://www.linkedin.com/in/fatih-altinisik/" target="_blank" rel="noopener">in LinkedIn</a>
@@ -2514,7 +2518,7 @@
     <div class="team-card reveal reveal-d2">
       <div class="team-avatar">HB</div>
       <div class="team-name">Hasan Berberkayar</div>
-      <div class="team-role">Computer Engineering, Işık University</div>
+      <div class="team-role">Software Engineering, Işık University</div>
       <div class="team-links">
         <a class="team-link" href="mailto:Hasanberberkyr@gmail.com">✉ Email</a>
         <a class="team-link" href="https://www.linkedin.com/in/hasan-berberkayar-157b70280" target="_blank" rel="noopener">in LinkedIn</a>
@@ -2600,7 +2604,7 @@
     </div>
     <div class="footer-bottom">
       <div class="footer-copy">© 2025–2026 MeetAI Team. Graduation Project.</div>
-      <div class="footer-course">COMP/SOFT 4902 &nbsp;·&nbsp; Işık University &nbsp;·&nbsp; 2025–2026</div>
+      <div class="footer-course">Işık University &nbsp;·&nbsp; 2025–2026</div>
     </div>
   </footer>
 </div>
