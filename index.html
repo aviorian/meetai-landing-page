@@ -1,0 +1,2687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MeetAI — AI-Assisted Online Meeting Optimization</title>
+  <meta name="description" content="MeetAI is a standalone desktop application that sees, hears, and understands your meetings in real time. Three parallel AI pipelines — Vision, Audio, NLP — deliver live coaching alerts to moderators.">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:            #DBEDFF;
+      --bg-card:       #ffffff;
+      --bg-subtle:     oklch(0.916 0.036 255);
+      --border:        oklch(0.855 0.024 255);
+      --tx-1:          oklch(0.14 0.012 255);
+      --tx-2:          oklch(0.40 0.012 255);
+      --tx-3:          oklch(0.60 0.008 255);
+      --accent:        oklch(0.50 0.20 255);
+      --accent-subtle: oklch(0.95 0.04 255);
+      --accent-border: oklch(0.80 0.10 255);
+      --green:         oklch(0.52 0.16 145);
+      --green-bg:      oklch(0.96 0.05 145);
+      --purple:        oklch(0.52 0.20 290);
+      --purple-bg:     oklch(0.95 0.04 290);
+      --amber:         oklch(0.68 0.16 72);
+      --pink:          #E62774;
+      --pink-bg:       oklch(0.97 0.06 350);
+      --border-subtle: oklch(0.90 0.010 255);
+      --font-mono:     'DM Mono', 'Courier New', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--tx-1);
+      overflow-x: hidden;
+    }
+
+    /* ── Fixed background network ─────────────────── */
+    .bg-network {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.28;
+    }
+
+    .site-content { position: relative; z-index: 1; }
+
+    /* ── Navigation ───────────────────────────────── */
+    .nav {
+      position: sticky;
+      top: 0; z-index: 100;
+      background: color-mix(in oklab, var(--bg) 82%, transparent);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--accent-border);
+      padding: 0 max(24px, 5vw);
+      height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 19px;
+      font-weight: 700;
+      letter-spacing: -0.045em;
+      color: var(--tx-1);
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+    .nav-logo-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      list-style: none;
+      flex: 1;
+      justify-content: center;
+    }
+    .nav-links a {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--tx-2);
+      text-decoration: none;
+      padding: 6px 11px;
+      border-radius: 6px;
+      transition: color 130ms, background 130ms;
+      white-space: nowrap;
+    }
+    .nav-links a:hover { color: var(--tx-1); background: var(--accent-subtle); }
+
+    .nav-cta {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 7px 16px;
+      border: 1.5px solid var(--accent);
+      border-radius: 7px;
+      flex-shrink: 0;
+      transition: background 130ms, color 130ms;
+      white-space: nowrap;
+    }
+    .nav-cta:hover { background: var(--accent); color: #fff; }
+
+    .nav-hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+      padding: 6px 4px;
+      background: none;
+      border: none;
+    }
+    .nav-hamburger span {
+      display: block;
+      width: 22px; height: 2px;
+      background: var(--tx-2);
+      border-radius: 2px;
+      transition: transform 200ms, opacity 200ms;
+    }
+    .nav-hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .nav-hamburger.open span:nth-child(2) { opacity: 0; }
+    .nav-hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    .nav-drawer {
+      display: none;
+      position: fixed;
+      top: 58px; left: 0; right: 0; bottom: 0;
+      background: color-mix(in oklab, var(--bg) 97%, white);
+      z-index: 99;
+      padding: 16px 24px;
+      flex-direction: column;
+      gap: 2px;
+      border-top: 1px solid var(--border);
+      overflow-y: auto;
+    }
+    .nav-drawer.open { display: flex; }
+    .nav-drawer a {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--tx-1);
+      text-decoration: none;
+      padding: 13px 16px;
+      border-radius: 8px;
+      transition: background 130ms;
+    }
+    .nav-drawer a:hover { background: var(--accent-subtle); }
+    .nav-drawer .nav-cta-mobile {
+      margin-top: 10px;
+      text-align: center;
+      color: #fff;
+      background: var(--accent);
+      border-radius: 8px;
+      padding: 13px 16px;
+      font-weight: 600;
+    }
+
+    /* ── Section shared ───────────────────────────── */
+    .section {
+      padding: 80px max(24px, 6vw);
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: 3px;
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-size: clamp(22px, 3vw, 30px);
+      font-weight: 700;
+      color: var(--tx-1);
+      letter-spacing: -0.03em;
+      line-height: 1.22;
+      margin-bottom: 14px;
+    }
+
+    .section-body {
+      font-size: 16px;
+      color: var(--tx-2);
+      line-height: 1.72;
+      max-width: 700px;
+    }
+
+    /* ── Scroll reveal ────────────────────────────── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(22px);
+      transition: opacity 480ms ease, transform 480ms ease;
+    }
+    .reveal.visible { opacity: 1; transform: none; }
+    .reveal-d1 { transition-delay: 80ms; }
+    .reveal-d2 { transition-delay: 160ms; }
+    .reveal-d3 { transition-delay: 240ms; }
+    .reveal-d4 { transition-delay: 320ms; }
+    .reveal-d5 { transition-delay: 400ms; }
+
+    /* ══════════════════════════════════════════════ */
+    /* HERO — Meeting Window                          */
+    /* ══════════════════════════════════════════════ */
+    .hero-wrap {
+      padding: 36px max(24px, 5vw) 56px;
+      max-width: 1240px;
+      margin: 0 auto;
+    }
+
+    .meeting-window {
+      background: oklch(0.968 0.014 255);
+      border: 1px solid rgba(54,126,255,0.38);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow:
+        0 16px 56px rgba(54,126,255,0.13),
+        0 3px 14px rgba(54,126,255,0.07);
+      display: flex;
+      flex-direction: column;
+      height: 760px;
+    }
+
+    .meeting-titlebar {
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      height: 38px;
+      background: rgba(54,126,255,0.11);
+      flex-shrink: 0;
+      gap: 10px;
+    }
+
+    .meeting-dots { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+    .meeting-dot { width: 11px; height: 11px; border-radius: 50%; }
+    .meeting-dot--red   { background: rgba(230,39,116,0.72); }
+    .meeting-dot--amber { background: rgba(255,185,0,0.64); }
+    .meeting-dot--green { background: rgba(50,205,100,0.58); }
+
+    .meeting-titlebar-center {
+      flex: 1;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(100,150,255,0.64);
+      letter-spacing: 0.025em;
+    }
+
+    .meeting-rec {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      font-weight: 700;
+      color: rgba(230,39,116,0.76);
+      flex-shrink: 0;
+    }
+    .meeting-rec-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: rgba(230,39,116,0.80);
+      animation: pulse-rec 2s ease-in-out infinite;
+    }
+    @keyframes pulse-rec { 0%,100%{opacity:1} 50%{opacity:.35} }
+
+    /* Meeting body grid */
+    .meeting-body {
+      display: grid;
+      grid-template-columns: 1fr 276px;
+      grid-template-rows: 1fr;
+      gap: 8px;
+      padding: 8px;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .meeting-main {
+      background: oklch(0.978 0.010 255);
+      border: 1px solid rgba(54,126,255,0.16);
+      border-radius: 8px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--accent-border) transparent;
+      min-height: 0;
+    }
+    .meeting-main::-webkit-scrollbar { width: 4px; }
+    .meeting-main::-webkit-scrollbar-thumb { background: var(--accent-border); border-radius: 2px; }
+
+    .meeting-hero-section {
+      padding: 36px 40px 28px;
+      border-bottom: 1px solid rgba(54,126,255,0.12);
+      position: relative;
+    }
+
+    .meeting-main-badge {
+      position: absolute;
+      bottom: 12px; right: 14px;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(54,126,255,0.52);
+      background: rgba(54,126,255,0.09);
+      border: 1px solid rgba(54,126,255,0.20);
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+
+    .hero-wordmark {
+      font-size: clamp(48px, 6.5vw, 76px);
+      font-weight: 700;
+      letter-spacing: -0.05em;
+      line-height: 0.94;
+      color: var(--tx-1);
+      margin-bottom: 12px;
+    }
+    .hero-wordmark .accent { color: var(--accent); }
+
+    .hero-subtitle {
+      font-size: clamp(15px, 2vw, 19px);
+      font-weight: 600;
+      color: var(--tx-1);
+      letter-spacing: -0.02em;
+      line-height: 1.3;
+      margin-bottom: 18px;
+      max-width: 500px;
+    }
+
+    .hero-divider {
+      width: 100%;
+      height: 1px;
+      background: color-mix(in oklab, var(--accent) 20%, white);
+      margin-bottom: 18px;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-bottom: 28px;
+    }
+    .hero-meta-row {
+      display: flex;
+      gap: 8px;
+      align-items: baseline;
+      flex-wrap: wrap;
+    }
+    .hero-meta-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+    .hero-meta-value {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--tx-1);
+    }
+    .hero-meta-course {
+      font-size: 12px;
+      color: var(--tx-3);
+      margin-top: 3px;
+    }
+
+    .hero-cta-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      background: var(--accent);
+      padding: 10px 22px;
+      border-radius: 8px;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: opacity 140ms, transform 140ms;
+    }
+    .btn-primary:hover { opacity: 0.86; transform: translateY(-1px); }
+
+    .btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--accent);
+      background: transparent;
+      padding: 10px 20px;
+      border-radius: 8px;
+      text-decoration: none;
+      border: 1.5px solid var(--accent-border);
+      cursor: pointer;
+      transition: border-color 140ms, background 140ms;
+    }
+    .btn-ghost:hover { border-color: var(--accent); background: var(--accent-subtle); }
+
+    /* ── Meeting sidebar ──────────────────────────── */
+    .meeting-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      overflow-y: auto;
+      min-height: 0;
+      scrollbar-width: thin;
+      scrollbar-color: var(--accent-border) transparent;
+    }
+    .meeting-sidebar::-webkit-scrollbar { width: 3px; }
+    .meeting-sidebar::-webkit-scrollbar-thumb { background: var(--accent-border); border-radius: 2px; }
+
+    .meeting-sidebar-logo {
+      background: rgba(255,255,255,0.62);
+      border: 1px solid rgba(54,126,255,0.16);
+      border-radius: 8px;
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .meeting-sidebar-logo img {
+      width: 100%;
+      max-height: 38px;
+      object-fit: contain;
+      opacity: 0.90;
+    }
+
+    .meeting-sidetiles {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    /* Participant tile */
+    .sidetile {
+      background: oklch(0.962 0.018 255);
+      border: 1px solid rgba(54,126,255,0.17);
+      border-radius: 6px;
+      padding: 7px 10px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      position: relative;
+      overflow: hidden;
+      flex: 1;
+      min-height: 40px;
+      cursor: pointer;
+      transition: border-color 180ms, background 180ms;
+    }
+    .sidetile:hover { border-color: rgba(54,126,255,0.60); background: oklch(0.952 0.026 255); }
+    .sidetile--active {
+      border: 1px solid rgba(54,126,255,0.72);
+      background: oklch(0.955 0.028 255);
+      box-shadow: 0 0 0 1px rgba(54,126,255,0.13);
+    }
+
+    .sidetile-name {
+      font-size: 11.5px;
+      color: rgba(80,130,220,0.84);
+      font-weight: 500;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: opacity 150ms;
+    }
+    .sidetile-wave { transition: opacity 150ms; flex-shrink: 0; }
+    .sidetile-avatar { transition: opacity 150ms; flex-shrink: 0; }
+
+    /* Contact overlay on hover */
+    .sidetile-contact {
+      position: absolute;
+      inset: 0;
+      background: var(--accent);
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 10px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 180ms;
+    }
+    .sidetile:hover .sidetile-contact {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .sidetile:hover .sidetile-avatar,
+    .sidetile:hover .sidetile-name,
+    .sidetile:hover .sidetile-wave { opacity: 0; }
+
+    .sidetile-contact a {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10.5px;
+      font-weight: 600;
+      color: #fff;
+      text-decoration: none;
+      padding: 4px 9px;
+      border-radius: 5px;
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.28);
+      white-space: nowrap;
+      transition: background 130ms;
+    }
+    .sidetile-contact a:hover { background: rgba(255,255,255,0.30); }
+
+    /* AI insights tile */
+    .sidetile--insights {
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: center;
+      gap: 5px;
+      padding: 9px 11px;
+      flex: 1.5;
+      cursor: default;
+    }
+    .sidetile--insights:hover { border-color: rgba(54,126,255,0.17); background: oklch(0.962 0.018 255); }
+    .insights-label {
+      font-size: 8.5px;
+      font-weight: 700;
+      letter-spacing: 0.10em;
+      color: rgba(100,155,255,0.70);
+      text-transform: uppercase;
+    }
+    .insights-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10.5px;
+      color: rgba(100,150,255,0.64);
+    }
+    .insights-row strong { color: rgba(54,126,255,0.95); font-weight: 700; }
+    .insights-bar {
+      height: 3px;
+      width: 100%;
+      background: rgba(54,126,255,0.10);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .insights-bar-fill {
+      height: 100%;
+      background: rgba(54,126,255,0.52);
+      border-radius: 2px;
+    }
+
+    /* ── Meeting toolbar ──────────────────────────── */
+    .meeting-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 16px;
+      height: 46px;
+      background: rgba(54,126,255,0.09);
+      gap: 9px;
+      flex-shrink: 0;
+    }
+
+    .toolbar-timer {
+      font-family: 'DM Mono', monospace;
+      font-size: 11.5px;
+      color: rgba(150,190,255,0.72);
+      background: rgba(54,126,255,0.11);
+      padding: 3px 9px;
+      border-radius: 4px;
+      margin-right: 6px;
+    }
+
+    .toolbar-btn {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: rgba(54,126,255,0.20);
+      border: 1px solid rgba(54,126,255,0.42);
+      cursor: pointer;
+      transition: background 130ms;
+    }
+    .toolbar-btn:hover { background: rgba(54,126,255,0.32); }
+    .toolbar-btn--end {
+      width: 44px;
+      border-radius: 14px;
+      background: rgba(230,39,116,0.70);
+      border-color: transparent;
+    }
+    .toolbar-btn--end:hover { background: rgba(230,39,116,0.88); }
+    .toolbar-btn--off { background: rgba(30,50,110,0.16); border-color: rgba(54,126,255,0.18); }
+
+    .toolbar-participants {
+      font-size: 11px;
+      color: rgba(150,185,255,0.62);
+      font-weight: 500;
+      margin-left: 6px;
+    }
+
+    .toolbar-participants-toggle {
+      display: none;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(100,150,255,0.78);
+      background: rgba(54,126,255,0.12);
+      border: 1px solid rgba(54,126,255,0.28);
+      border-radius: 6px;
+      padding: 4px 10px;
+      cursor: pointer;
+      margin-left: 8px;
+      user-select: none;
+      transition: background 130ms;
+    }
+    .toolbar-participants-toggle:hover { background: rgba(54,126,255,0.20); }
+    .toolbar-participants-toggle svg { flex-shrink: 0; }
+
+    /* Mobile participants panel */
+    .mobile-participants {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 280ms ease;
+      background: oklch(0.964 0.016 255);
+      border-top: 1px solid rgba(54,126,255,0.14);
+    }
+    .mobile-participants.open { max-height: 400px; }
+    .mobile-participants-inner {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 12px;
+    }
+
+    .mobile-tile {
+      flex: 1;
+      min-width: 150px;
+      background: oklch(0.955 0.028 255);
+      border: 1px solid rgba(54,126,255,0.28);
+      border-radius: 8px;
+      padding: 11px 13px;
+    }
+    .mobile-tile-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .mobile-tile-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--tx-1);
+    }
+    .mobile-tile-links {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .mobile-tile-link {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 4px 9px;
+      border-radius: 5px;
+      background: var(--accent-subtle);
+      border: 1px solid var(--accent-border);
+      transition: border-color 130ms;
+    }
+    .mobile-tile-link:hover { border-color: var(--accent); }
+
+    /* ── Toast strip ──────────────────────────────── */
+    .toast-strip {
+      display: flex;
+      gap: 10px;
+      padding: 0 8px 8px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .toast-strip::-webkit-scrollbar { display: none; }
+
+    .alert-toast {
+      flex-shrink: 0;
+      width: 230px;
+      background: #fff;
+      border-radius: 10px;
+      border: 1px solid rgba(230,39,116,0.22);
+      border-left: 3px solid var(--pink);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.07), 0 1px 4px rgba(230,39,116,0.09);
+      overflow: hidden;
+    }
+
+    .alert-toast-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 11px 5px;
+      background: rgba(230,39,116,0.04);
+      border-bottom: 1px solid rgba(230,39,116,0.11);
+    }
+    .alert-toast-app {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--tx-1);
+    }
+    .alert-toast-app-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--pink);
+    }
+    .alert-toast-time {
+      font-size: 9.5px;
+      color: var(--tx-3);
+      font-family: 'DM Mono', monospace;
+    }
+    .alert-toast-body { padding: 9px 11px 11px; }
+    .alert-toast-title {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--tx-1);
+      margin-bottom: 3px;
+    }
+    .alert-toast-msg {
+      font-size: 10.5px;
+      color: var(--tx-2);
+      line-height: 1.5;
+      margin-bottom: 7px;
+    }
+    .alert-toast-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .alert-toast-dismiss { font-size: 9.5px; color: var(--tx-3); }
+    .alert-toast-cta { font-size: 10px; font-weight: 700; color: var(--pink); }
+
+    /* ══════════════════════════════════════════════ */
+    /* PROBLEM                                        */
+    /* ══════════════════════════════════════════════ */
+    .problem-stat {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 10px;
+      background: var(--accent-subtle);
+      border: 1px solid var(--accent-border);
+      border-radius: 10px;
+      padding: 11px 22px;
+      margin-bottom: 20px;
+    }
+    .problem-stat-number {
+      font-family: 'DM Mono', monospace;
+      font-size: 26px;
+      font-weight: 500;
+      color: var(--accent);
+      line-height: 1;
+    }
+    .problem-stat-label { font-size: 14px; color: var(--tx-2); }
+
+    .problem-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 24px;
+    }
+
+    .problem-card {
+      background: color-mix(in oklab, var(--bg-card) 72%, transparent);
+      border: 1px solid var(--border);
+      border-left: 3.5px solid var(--accent);
+      border-radius: 0 10px 10px 0;
+      padding: 18px 20px;
+      transition: box-shadow 180ms;
+    }
+    .problem-card:hover {
+      box-shadow: 0 4px 18px rgba(80,120,180,0.10);
+    }
+    .problem-card-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--tx-1);
+      margin-bottom: 7px;
+    }
+    .problem-card-body { font-size: 14px; color: var(--tx-2); line-height: 1.62; }
+
+    /* ══════════════════════════════════════════════ */
+    /* SOLUTION                                       */
+    /* ══════════════════════════════════════════════ */
+    .solution-body { font-size: 16px; color: var(--tx-2); line-height: 1.76; max-width: 780px; }
+
+    /* ══════════════════════════════════════════════ */
+    /* PIPELINES                                      */
+    /* ══════════════════════════════════════════════ */
+    .pipelines-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-top: 28px;
+    }
+
+    .pipeline-card {
+      background: color-mix(in oklab, var(--bg-card) 72%, transparent);
+      border: 1px solid color-mix(in oklab, var(--accent-border) 80%, white);
+      border-radius: 12px;
+      padding: 0 0 22px;
+      overflow: hidden;
+      box-shadow: 0 4px 18px rgba(80,120,180,0.07);
+      transition: transform 200ms, box-shadow 200ms;
+    }
+    .pipeline-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 32px rgba(80,120,180,0.12);
+    }
+    .pipeline-card--vision { border-top: 3px solid var(--accent); }
+    .pipeline-card--audio  { border-top: 3px solid var(--green); }
+    .pipeline-card--nlp    { border-top: 3px solid var(--pink); }
+
+    .pipeline-card-viz {
+      height: 110px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 0;
+    }
+    .pipeline-card-viz svg { width: 100%; height: 100%; }
+
+    .pipeline-card-content { padding: 14px 22px 0; }
+
+    .pipeline-badge {
+      font-size: 12.5px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      margin-bottom: 5px;
+    }
+    .badge-vision { color: var(--accent); }
+    .badge-audio  { color: var(--green); }
+    .badge-nlp    { color: var(--pink); }
+
+    .pipeline-card-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--tx-1);
+      margin-bottom: 7px;
+      letter-spacing: -0.015em;
+    }
+    .pipeline-card-body { font-size: 13.5px; color: var(--tx-2); line-height: 1.64; }
+
+    /* ══════════════════════════════════════════════ */
+    /* COMPARISON TABLE                               */
+    /* ══════════════════════════════════════════════ */
+    .comparison-wrap {
+      border: 1.5px solid var(--accent-border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 26px;
+      overflow-x: auto;
+    }
+
+    .comparison-table {
+      width: 100%;
+      min-width: 520px;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    .comparison-table thead tr { background: var(--bg-subtle); }
+    .comparison-table th {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 13px 18px;
+      text-align: left;
+      color: var(--tx-3);
+      border-bottom: 1.5px solid var(--accent-border);
+      border-right: 1px solid var(--accent-border);
+      white-space: nowrap;
+    }
+    .comparison-table th.col-meetai { background: var(--accent); color: #fff; }
+    .comparison-table th:last-child { border-right: none; }
+    .comparison-table td {
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--accent-border);
+      border-right: 1px solid var(--accent-border);
+      color: var(--tx-2);
+      vertical-align: middle;
+    }
+    .comparison-table tbody tr:last-child td { border-bottom: none; }
+    .comparison-table td:last-child { border-right: none; }
+    .comparison-table tbody tr:nth-child(even) td:not(.col-meetai) { background: oklch(0.975 0.004 255); }
+    .comparison-table td.col-feature { font-weight: 600; color: var(--tx-1); }
+    .comparison-table td.col-meetai {
+      background: var(--accent-subtle);
+      color: oklch(0.38 0.18 255);
+      font-weight: 600;
+      border-left: 2px solid var(--accent);
+      border-right: 2px solid var(--accent);
+    }
+    .check-icon { color: var(--green); font-weight: 700; margin-right: 4px; }
+
+    /* ══════════════════════════════════════════════ */
+    /* ARCHITECTURE + OUTCOMES                        */
+    /* ══════════════════════════════════════════════ */
+    .arch-outcomes-grid {
+      display: grid;
+      grid-template-columns: 48fr 52fr;
+      gap: 0;
+      align-items: stretch;
+      margin-top: 4px;
+    }
+
+    .arch-panel { min-width: 0; }
+    .arch-panel--left {
+      padding-right: 40px;
+      border-right: 1.5px solid color-mix(in oklab, var(--accent) 22%, white);
+    }
+    .arch-panel--right { padding-left: 40px; }
+
+    .arch-layer-list { list-style: none; margin-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+    .arch-layer {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 12px 16px;
+      background: color-mix(in oklab, var(--bg-card) 65%, transparent);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    .arch-layer-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+      margin-top: 5px;
+    }
+    .arch-layer-dot--green { background: var(--green); }
+    .arch-layer-dot--pink { background: var(--pink); }
+    .arch-layer-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--tx-1);
+      margin-bottom: 2px;
+    }
+    .arch-layer-desc { font-size: 12.5px; color: var(--tx-2); line-height: 1.55; }
+
+    .outcomes-list { display: flex; flex-direction: column; margin-top: 16px; }
+    .outcome-row {
+      display: grid;
+      grid-template-columns: 80px 1fr;
+      gap: 32px;
+      align-items: center;
+      padding: 16px 0;
+      border-bottom: 1px solid rgba(54,126,255,0.10);
+    }
+    .outcome-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .outcome-metric {
+      font-family: 'DM Mono', monospace;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+      text-align: right;
+      white-space: nowrap;
+    }
+    .outcome-metric--green { color: var(--green); font-size: 36px; }
+    .outcome-title { font-size: 14px; font-weight: 600; color: var(--tx-1); margin-bottom: 3px; }
+    .outcome-body { font-size: 13px; color: var(--tx-2); line-height: 1.55; }
+
+    /* ══════════════════════════════════════════════ */
+    /* TEAM                                           */
+    /* ══════════════════════════════════════════════ */
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-top: 32px;
+    }
+
+    .team-card {
+      background: color-mix(in oklab, var(--bg-card) 85%, transparent);
+      border: 1px solid var(--accent-border);
+      border-radius: 14px;
+      padding: 28px 22px;
+      text-align: center;
+      box-shadow: 0 3px 16px rgba(80,120,180,0.07);
+      transition: transform 200ms, box-shadow 200ms;
+    }
+    .team-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 28px rgba(80,120,180,0.12);
+    }
+
+    .team-avatar {
+      width: 68px; height: 68px;
+      border-radius: 50%;
+      background: var(--accent-subtle);
+      border: 2px solid var(--accent-border);
+      margin: 0 auto 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+    }
+
+    .team-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--tx-1);
+      letter-spacing: -0.02em;
+      margin-bottom: 3px;
+    }
+    .team-role { font-size: 12px; color: var(--tx-3); margin-bottom: 16px; }
+
+    .team-links { display: flex; gap: 7px; justify-content: center; flex-wrap: wrap; }
+    .team-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 5px 13px;
+      border-radius: 6px;
+      border: 1.5px solid var(--accent-border);
+      background: var(--accent-subtle);
+      transition: border-color 130ms, background 130ms;
+    }
+    .team-link:hover { border-color: var(--accent); background: color-mix(in oklab, var(--accent) 10%, white); }
+
+    .supervisor-row {
+      grid-column: 1 / -1;
+      background: color-mix(in oklab, var(--bg-card) 85%, transparent);
+      border: 1px solid var(--accent-border);
+      border-top: 3px solid var(--accent);
+      border-radius: 12px;
+      padding: 18px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .supervisor-avatar {
+      width: 50px; height: 50px;
+      border-radius: 50%;
+      background: var(--accent-subtle);
+      border: 2px solid var(--accent-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+    .supervisor-label {
+      font-size: 9.5px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--tx-3);
+      margin-bottom: 3px;
+    }
+    .supervisor-name { font-size: 15px; font-weight: 700; color: var(--tx-1); letter-spacing: -0.02em; }
+    .supervisor-affil { font-size: 12.5px; color: var(--tx-3); margin-top: 2px; }
+
+    /* ══════════════════════════════════════════════ */
+    /* FOOTER                                         */
+    /* ══════════════════════════════════════════════ */
+    .footer-outer {
+      border-top: 1px solid var(--accent-border);
+      margin-top: 20px;
+    }
+    .footer {
+      padding: 40px max(24px, 5vw);
+      max-width: 1240px;
+      margin: 0 auto;
+    }
+
+    .footer-top {
+      display: flex;
+      gap: 48px;
+      align-items: flex-start;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+    }
+
+    .footer-brand { flex-shrink: 0; min-width: 160px; }
+    .footer-logo {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 19px;
+      font-weight: 700;
+      letter-spacing: -0.045em;
+      color: var(--tx-1);
+      margin-bottom: 5px;
+    }
+    .footer-logo::before {
+      content: '';
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+    }
+    .footer-tagline { font-size: 12.5px; color: var(--tx-3); line-height: 1.55; max-width: 180px; }
+
+    /* ── Tech stack carousel ──────────────────── */
+    .stack-carousel-section {
+      padding: 0 max(24px, 6vw) 72px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .stack-carousel-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .stack-carousel-track-wrap {
+      position: relative;
+      overflow: hidden;
+    }
+    /* fade edges */
+    .stack-carousel-track-wrap::before,
+    .stack-carousel-track-wrap::after {
+      content: '';
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 80px;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .stack-carousel-track-wrap::before {
+      left: 0;
+      background: linear-gradient(to right, var(--bg), transparent);
+    }
+    .stack-carousel-track-wrap::after {
+      right: 0;
+      background: linear-gradient(to left, var(--bg), transparent);
+    }
+    .stack-carousel-track {
+      display: flex;
+      gap: 12px;
+      width: max-content;
+      animation: scroll-logos 32s linear infinite;
+    }
+    .stack-carousel-track:hover { animation-play-state: paused; }
+    @keyframes scroll-logos {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+    .stack-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 18px 12px;
+      background: color-mix(in oklab, var(--bg-card) 75%, transparent);
+      border: 1px solid color-mix(in oklab, var(--accent-border) 70%, white);
+      border-radius: 12px;
+      flex-shrink: 0;
+      min-width: 88px;
+      transition: background 160ms, border-color 160ms;
+    }
+    .stack-item:hover {
+      background: color-mix(in oklab, var(--bg-card) 92%, transparent);
+      border-color: var(--accent-border);
+    }
+    .stack-logo {
+      height: 36px;
+      width: auto;
+      max-width: 64px;
+      object-fit: contain;
+      opacity: 0.88;
+      filter: grayscale(8%);
+    }
+    .stack-name {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--tx-3);
+      white-space: nowrap;
+      letter-spacing: -0.01em;
+    }
+
+    .footer-bottom {
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .footer-copy { font-size: 12px; color: var(--tx-3); }
+    .footer-course { font-size: 12px; color: var(--tx-3); }
+
+    /* ══════════════════════════════════════════════ */
+    /* RESPONSIVE                                     */
+    /* ══════════════════════════════════════════════ */
+    @media (max-width: 1060px) {
+      .meeting-body { grid-template-columns: 1fr 240px; }
+    }
+
+    @media (max-width: 860px) {
+      .nav-links { display: none; }
+      .nav-hamburger { display: flex; }
+      .nav-cta { display: none; }
+
+      .meeting-body { grid-template-columns: 1fr; }
+      .meeting-sidebar { display: none; }
+      .toolbar-participants { display: none; }
+      .toolbar-participants-toggle { display: flex; }
+
+      .meeting-main { padding: 28px 28px 44px; min-height: auto; }
+      .toast-strip { padding-bottom: 0; margin-bottom: 8px; }
+
+      .problem-grid { grid-template-columns: 1fr; gap: 12px; }
+      .pipelines-grid { grid-template-columns: 1fr; gap: 14px; }
+      .team-grid { grid-template-columns: 1fr; }
+      .supervisor-row { grid-column: auto; }
+      .arch-outcomes-grid { grid-template-columns: 1fr; gap: 48px; }
+      .arch-panel--left { padding-right: 0; border-right: none; border-bottom: 1.5px solid color-mix(in oklab, var(--accent) 22%, white); padding-bottom: 40px; }
+      .arch-panel--right { padding-left: 0; }
+      .section { padding: 60px max(20px, 5vw); }
+    }
+
+    @media (max-width: 600px) {
+      .pipelines-grid { grid-template-columns: 1fr; }
+      .problem-grid { grid-template-columns: 1fr; }
+      .team-grid { grid-template-columns: 1fr; }
+      .hero-wordmark { font-size: 44px; }
+      .hero-cta-row { flex-direction: column; }
+      .btn-primary, .btn-ghost { justify-content: center; }
+      .section { padding: 48px max(18px, 5vw); }
+      .toast-strip { display: none; }
+      .footer-bottom { flex-direction: column; align-items: flex-start; }
+    }
+
+    @media (max-width: 420px) {
+      .hero-wordmark { font-size: 38px; }
+      .outcomes-list .outcome-row { grid-template-columns: 64px 1fr; gap: 14px; }
+      .outcome-metric { font-size: 22px; }
+    }
+
+    /* ══════════════════════════════════════════════ */
+    /* LIVE DASHBOARD (inside meeting window)         */
+    /* ══════════════════════════════════════════════ */
+
+    /* Dashboard section header divider */
+    .db-section-divider {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 20px 10px;
+      border-bottom: 1px solid rgba(54,126,255,0.10);
+    }
+    .db-chevron {
+      display: none; /* shown only on mobile */
+      margin-left: auto;
+      flex-shrink: 0;
+      color: var(--tx-3);
+      transition: transform 240ms ease;
+    }
+    .db-section-divider.db-collapsed .db-chevron {
+      transform: rotate(-90deg);
+    }
+    .db-live-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--pink);
+      animation: pulse-rec 1.6s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+    .db-section-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: var(--tx-3);
+    }
+
+    /* Dashboard content padding area */
+    .db-content {
+      padding: 14px 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* Agenda strip */
+    .db-agenda-strip {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 14px;
+      font-size: 12px;
+      color: var(--tx-3);
+      line-height: 1.5;
+      flex-shrink: 0;
+    }
+    .db-agenda-label {
+      font-weight: 600;
+      color: var(--tx-2);
+      margin-right: 6px;
+    }
+
+    /* Generic dashboard card */
+    .db-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 18px;
+    }
+    .db-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .db-card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--tx-1);
+    }
+    .db-card-meta {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--tx-3);
+    }
+
+    /* Transcript */
+    .db-transcript-scroll {
+      max-height: 240px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+    .db-transcript-scroll::-webkit-scrollbar { width: 3px; }
+    .db-transcript-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .db-transcript-block {
+      padding: 9px 0;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .db-transcript-block:last-child { border-bottom: none; padding-bottom: 4px; }
+    .db-transcript-meta {
+      display: flex;
+      gap: 8px;
+      align-items: baseline;
+      margin-bottom: 3px;
+    }
+    .db-transcript-time {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--tx-3);
+      flex-shrink: 0;
+    }
+    .db-transcript-speaker {
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .db-transcript-text {
+      font-size: 13px;
+      color: var(--tx-2);
+      line-height: 1.55;
+    }
+    .db-listening {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 0 4px;
+    }
+    .db-listening-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse-rec 1.3s ease-in-out infinite;
+    }
+    .db-listening-label { font-size: 11px; color: var(--tx-3); }
+
+    /* Speaker time bars */
+    .db-speaker-row { display: flex; flex-direction: column; gap: 9px; }
+    .db-speaker-item {}
+    .db-speaker-label-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .db-speaker-name {
+      font-size: 12px;
+      font-family: var(--font-mono);
+      color: var(--tx-2);
+      font-weight: 500;
+    }
+    .db-speaker-time {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--tx-3);
+    }
+    .db-bar-track {
+      height: 5px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .db-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: var(--accent);
+    }
+
+    /* Line chart */
+    .db-chart-svg {
+      display: block;
+      width: 100%;
+      overflow: visible;
+    }
+
+    /* ── Metric rings in sidebar ─────────────────── */
+    .metric-rings-section {
+      background: rgba(255,255,255,0.55);
+      border: 1px solid rgba(54,126,255,0.16);
+      border-radius: 8px;
+      padding: 11px 10px 13px;
+      flex-shrink: 0;
+    }
+    .metric-rings-label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: rgba(100,155,255,0.70);
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    .metric-rings-top {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .metric-rings-bottom {
+      display: flex;
+      justify-content: center;
+    }
+    .metric-ring-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .metric-ring-svg-wrap {
+      position: relative;
+      width: 80px;
+      height: 80px;
+    }
+    .metric-ring-svg-wrap svg {
+      display: block;
+      transform: rotate(-90deg);
+    }
+    .metric-ring-value {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--tx-1);
+    }
+    .metric-ring-name {
+      font-size: 10.5px;
+      color: var(--tx-2);
+      font-weight: 500;
+      text-align: center;
+      line-height: 1.3;
+    }
+
+    /* Mobile: meeting window becomes natural height, no fixed scroll */
+    @media (max-width: 860px) {
+      .meeting-window { height: auto; }
+      .meeting-body { flex: none; min-height: 0; overflow: visible; grid-template-rows: auto; }
+      .meeting-main { overflow-y: visible; }
+      .db-transcript-scroll { max-height: 220px; }
+      .meeting-main-badge { display: none; }
+
+      /* Collapsible dashboard section */
+      .db-section-divider {
+        cursor: pointer;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        border-radius: 0 0 4px 4px;
+        transition: background 140ms;
+      }
+      .db-section-divider:active { background: rgba(54,126,255,0.06); }
+      .db-chevron { display: block; }
+      .db-content {
+        overflow: hidden;
+        transition: max-height 400ms ease, padding-top 400ms ease, padding-bottom 400ms ease;
+        max-height: 6000px;
+      }
+      .db-content.db-collapsed {
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Background network mesh ──────────────────────────────────────── -->
+<svg class="bg-network" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <g stroke="#3FA8FF" fill="#3FA8FF" opacity="0.20">
+    <g stroke-width="1" fill="none">
+      <line x1="50" y1="30" x2="120" y2="90"/><line x1="50" y1="30" x2="30" y2="120"/>
+      <line x1="120" y1="90" x2="30" y2="120"/><line x1="120" y1="90" x2="220" y2="60"/>
+      <line x1="30" y1="120" x2="200" y2="180"/><line x1="220" y1="60" x2="290" y2="130"/>
+      <line x1="200" y1="180" x2="90" y2="240"/><line x1="290" y1="130" x2="420" y2="80"/>
+      <line x1="420" y1="80" x2="560" y2="110"/><line x1="560" y1="110" x2="580" y2="220"/>
+      <line x1="420" y1="80" x2="440" y2="190"/><line x1="440" y1="190" x2="580" y2="220"/>
+      <line x1="580" y1="220" x2="660" y2="100"/><line x1="660" y1="100" x2="780" y2="60"/>
+      <line x1="780" y1="60" x2="900" y2="90"/><line x1="900" y1="90" x2="940" y2="200"/>
+      <line x1="780" y1="60" x2="820" y2="180"/><line x1="820" y1="180" x2="940" y2="200"/>
+      <line x1="940" y1="200" x2="1060" y2="80"/><line x1="1060" y1="80" x2="1180" y2="110"/>
+      <line x1="1180" y1="110" x2="1200" y2="220"/><line x1="1060" y1="80" x2="1100" y2="190"/>
+      <line x1="1100" y1="190" x2="1200" y2="220"/><line x1="1200" y1="220" x2="1340" y2="80"/>
+      <line x1="1340" y1="80" x2="1410" y2="150"/><line x1="1410" y1="150" x2="1390" y2="260"/>
+      <line x1="60" y1="300" x2="180" y2="340"/><line x1="180" y1="340" x2="200" y2="440"/>
+      <line x1="60" y1="300" x2="90" y2="430"/><line x1="90" y1="430" x2="200" y2="440"/>
+      <line x1="200" y1="440" x2="340" y2="360"/><line x1="340" y1="360" x2="480" y2="410"/>
+      <line x1="480" y1="410" x2="500" y2="530"/><line x1="340" y1="360" x2="360" y2="490"/>
+      <line x1="360" y1="490" x2="500" y2="530"/><line x1="500" y1="530" x2="620" y2="400"/>
+      <line x1="620" y1="400" x2="760" y2="450"/><line x1="760" y1="450" x2="780" y2="560"/>
+      <line x1="620" y1="400" x2="640" y2="510"/><line x1="640" y1="510" x2="780" y2="560"/>
+      <line x1="780" y1="560" x2="920" y2="420"/><line x1="920" y1="420" x2="1060" y2="470"/>
+      <line x1="1060" y1="470" x2="1080" y2="580"/><line x1="920" y1="420" x2="950" y2="540"/>
+      <line x1="950" y1="540" x2="1080" y2="580"/><line x1="1080" y1="580" x2="1220" y2="440"/>
+      <line x1="1220" y1="440" x2="1370" y2="490"/><line x1="1370" y1="490" x2="1400" y2="580"/>
+      <line x1="70" y1="650" x2="210" y2="700"/><line x1="210" y1="700" x2="230" y2="800"/>
+      <line x1="70" y1="650" x2="100" y2="770"/><line x1="100" y1="770" x2="230" y2="800"/>
+      <line x1="230" y1="800" x2="380" y2="670"/><line x1="380" y1="670" x2="530" y2="720"/>
+      <line x1="530" y1="720" x2="550" y2="830"/><line x1="380" y1="670" x2="400" y2="790"/>
+      <line x1="400" y1="790" x2="550" y2="830"/><line x1="550" y1="830" x2="700" y2="680"/>
+      <line x1="700" y1="680" x2="840" y2="730"/><line x1="840" y1="730" x2="860" y2="840"/>
+      <line x1="700" y1="680" x2="730" y2="800"/><line x1="730" y1="800" x2="860" y2="840"/>
+      <line x1="860" y1="840" x2="1010" y2="690"/><line x1="1010" y1="690" x2="1160" y2="740"/>
+      <line x1="1160" y1="740" x2="1180" y2="850"/><line x1="1010" y1="690" x2="1040" y2="810"/>
+      <line x1="1040" y1="810" x2="1180" y2="850"/><line x1="1180" y1="850" x2="1330" y2="700"/>
+      <line x1="1330" y1="700" x2="1420" y2="760"/>
+      <!-- cross connections -->
+      <line x1="200" y1="180" x2="290" y2="130" stroke-width="0.6"/>
+      <line x1="580" y1="220" x2="660" y2="300" stroke-width="0.6"/>
+      <line x1="200" y1="440" x2="290" y2="340" stroke-width="0.6"/>
+      <line x1="500" y1="530" x2="580" y2="420" stroke-width="0.6"/>
+      <line x1="90" y1="240" x2="60" y2="300" stroke-width="0.6"/>
+      <line x1="90" y1="430" x2="70" y2="650" stroke-width="0.6"/>
+      <line x1="360" y1="490" x2="380" y2="670" stroke-width="0.6"/>
+      <line x1="640" y1="510" x2="700" y2="680" stroke-width="0.6"/>
+      <line x1="950" y1="540" x2="1010" y2="690" stroke-width="0.6"/>
+      <line x1="1220" y1="440" x2="1330" y2="700" stroke-width="0.6"/>
+      <line x1="1390" y1="260" x2="1400" y2="580" stroke-width="0.6"/>
+      <line x1="1400" y1="580" x2="1420" y2="760" stroke-width="0.6"/>
+    </g>
+    <g>
+      <circle cx="50" cy="30" r="3.5"/><circle cx="120" cy="90" r="2.8"/><circle cx="30" cy="120" r="3"/>
+      <circle cx="220" cy="60" r="2.5" fill="#E62774" stroke="#E62774"/><circle cx="290" cy="130" r="2.8"/>
+      <circle cx="200" cy="180" r="3.2"/><circle cx="90" cy="240" r="2.5"/><circle cx="420" cy="80" r="3"/>
+      <circle cx="560" cy="110" r="2.8" fill="#E62774" stroke="#E62774"/><circle cx="580" cy="220" r="3.2"/>
+      <circle cx="440" cy="190" r="2.5"/><circle cx="660" cy="100" r="3"/><circle cx="780" cy="60" r="2.8"/>
+      <circle cx="900" cy="90" r="3.2"/><circle cx="940" cy="200" r="2.5"/><circle cx="820" cy="180" r="2.8"/>
+      <circle cx="1060" cy="80" r="3" fill="#E62774" stroke="#E62774"/><circle cx="1180" cy="110" r="2.8"/>
+      <circle cx="1200" cy="220" r="3.2"/><circle cx="1100" cy="190" r="2.5"/><circle cx="1340" cy="80" r="3"/>
+      <circle cx="1410" cy="150" r="2.8"/><circle cx="1390" cy="260" r="3.2"/>
+      <circle cx="60" cy="300" r="2.8"/><circle cx="180" cy="340" r="3"/><circle cx="200" cy="440" r="3.2"/>
+      <circle cx="90" cy="430" r="2.5"/><circle cx="340" cy="360" r="3"/><circle cx="480" cy="410" r="2.8"/>
+      <circle cx="500" cy="530" r="3.2" fill="#E62774" stroke="#E62774"/><circle cx="360" cy="490" r="2.5"/>
+      <circle cx="620" cy="400" r="3"/><circle cx="760" cy="450" r="2.8"/><circle cx="780" cy="560" r="3.2"/>
+      <circle cx="640" cy="510" r="2.5"/><circle cx="920" cy="420" r="3" fill="#E62774" stroke="#E62774"/>
+      <circle cx="1060" cy="470" r="2.8"/><circle cx="1080" cy="580" r="3.2"/><circle cx="950" cy="540" r="2.5"/>
+      <circle cx="1220" cy="440" r="3"/><circle cx="1370" cy="490" r="2.8"/><circle cx="1400" cy="580" r="3.2"/>
+      <circle cx="70" cy="650" r="2.8"/><circle cx="210" cy="700" r="3"/><circle cx="230" cy="800" r="3.2"/>
+      <circle cx="100" cy="770" r="2.5"/><circle cx="380" cy="670" r="3" fill="#E62774" stroke="#E62774"/>
+      <circle cx="530" cy="720" r="2.8"/><circle cx="550" cy="830" r="3.2"/><circle cx="400" cy="790" r="2.5"/>
+      <circle cx="700" cy="680" r="3"/><circle cx="840" cy="730" r="2.8"/><circle cx="860" cy="840" r="3.2"/>
+      <circle cx="730" cy="800" r="2.5"/><circle cx="1010" cy="690" r="3" fill="#E62774" stroke="#E62774"/>
+      <circle cx="1160" cy="740" r="2.8"/><circle cx="1180" cy="850" r="3.2"/><circle cx="1040" cy="810" r="2.5"/>
+      <circle cx="1330" cy="700" r="3"/><circle cx="1420" cy="760" r="2.8"/>
+    </g>
+  </g>
+</svg>
+
+<div class="site-content">
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- NAVIGATION                                                   -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<nav class="nav">
+  <a href="#" class="nav-logo"><span class="nav-logo-dot"></span>meetai</a>
+  <ul class="nav-links">
+    <li><a href="#problem">Problem</a></li>
+    <li><a href="#solution">Solution</a></li>
+    <li><a href="#how-it-works">How It Works</a></li>
+    <li><a href="#outcomes">Outcomes</a></li>
+    <li><a href="#team">Team</a></li>
+  </ul>
+  <a href="#team" class="nav-cta">Contact Us</a>
+  <button class="nav-hamburger" id="hamburger" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<div class="nav-drawer" id="nav-drawer">
+  <a href="#problem" class="nav-drawer-link">Problem</a>
+  <a href="#solution" class="nav-drawer-link">Solution</a>
+  <a href="#how-it-works" class="nav-drawer-link">How It Works</a>
+  <a href="#outcomes" class="nav-drawer-link">Outcomes</a>
+  <a href="#team" class="nav-drawer-link">Team</a>
+  <a href="#team" class="nav-cta-mobile">Contact Us</a>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- HERO — Meeting Window                                        -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div class="hero-wrap">
+  <div class="meeting-window reveal">
+
+    <!-- Title bar -->
+    <div class="meeting-titlebar">
+      <div class="meeting-dots">
+        <span class="meeting-dot meeting-dot--red"></span>
+        <span class="meeting-dot meeting-dot--amber"></span>
+        <span class="meeting-dot meeting-dot--green"></span>
+      </div>
+      <div class="meeting-titlebar-center">MeetAI Landing Session &nbsp;·&nbsp; 5 Participants</div>
+      <div class="meeting-rec"><span class="meeting-rec-dot"></span> REC</div>
+    </div>
+
+    <!-- Body: main tile + sidebar -->
+    <div class="meeting-body">
+
+      <!-- Main content tile -->
+      <div class="meeting-main">
+
+        <!-- ── Hero section ── -->
+        <div class="meeting-hero-section">
+          <span class="meeting-main-badge">Presenting</span>
+          <div class="hero-wordmark">Meet<span class="accent">AI</span></div>
+          <div class="hero-subtitle">AI-Assisted Online Meeting Optimization and Analytics Tool</div>
+          <div class="hero-divider"></div>
+          <div class="hero-meta">
+            <div class="hero-meta-row">
+              <span class="hero-meta-label">Team:</span>
+              <span class="hero-meta-value">Fatih Altınışık &nbsp;·&nbsp; Hasan Berberkayar &nbsp;·&nbsp; Erdem Karaahmet</span>
+            </div>
+            <div class="hero-meta-row">
+              <span class="hero-meta-label">Supervisor:</span>
+              <span class="hero-meta-value">Prof. Dr. Mehmet Devrim Akça</span>
+            </div>
+            <div class="hero-meta-course">COMP/SOFT 4902 &nbsp;·&nbsp; Işık University &nbsp;·&nbsp; 2025–2026</div>
+          </div>
+          <div class="hero-cta-row">
+            <a href="#how-it-works" class="btn-primary">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="white" stroke-width="1.5"/><path d="M6.5 5.5l4 2.5-4 2.5V5.5z" fill="white"/></svg>
+              See How It Works
+            </a>
+            <a href="#team" class="btn-ghost">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6zm0 8c3.3 0 6 1.5 6 3v1H2v-1c0-1.5 2.7-3 6-3z" fill="currentColor"/></svg>
+              Contact the Team
+            </a>
+          </div>
+        </div>
+
+        <!-- ── Live dashboard (scroll down to see) ── -->
+        <div class="db-section-divider" id="db-divider" role="button" aria-expanded="true">
+          <span class="db-live-dot"></span>
+          <span class="db-section-title">Live Dashboard &nbsp;·&nbsp; Q3 Product Roadmap Review</span>
+          <svg class="db-chevron" width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <path d="M2.5 5l4.5 4.5L11.5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+
+        <div class="db-content" id="db-content">
+
+          <!-- Agenda strip -->
+          <div class="db-agenda-strip">
+            <span class="db-agenda-label">Agenda</span>
+            1. Review Q2 outcomes &nbsp;·&nbsp; 2. Prioritize Q3 features &nbsp;·&nbsp; 3. Assign owners &nbsp;·&nbsp; 4. Set milestones
+          </div>
+
+          <!-- Live Transcript -->
+          <div class="db-card">
+            <div class="db-card-header">
+              <span class="db-card-title">Live Transcript</span>
+              <span class="db-card-meta">6 segments</span>
+            </div>
+            <div class="db-transcript-scroll">
+              <div class="db-transcript-block">
+                <div class="db-transcript-meta">
+                  <span class="db-transcript-time">0:00</span>
+                  <span class="db-transcript-speaker" style="color:var(--accent)">Speaker 1</span>
+                </div>
+                <p class="db-transcript-text">Let's start by reviewing our Q2 outcomes. We hit 87% of our OKRs — slightly below target but acceptable given the resource constraints we faced in the last sprint.</p>
+              </div>
+              <div class="db-transcript-block">
+                <div class="db-transcript-meta">
+                  <span class="db-transcript-time">2:14</span>
+                  <span class="db-transcript-speaker" style="color:var(--green)">Speaker 2</span>
+                </div>
+                <p class="db-transcript-text">Agreed. Feature velocity was lower than expected, but quality metrics improved significantly. User retention went up 12% quarter-over-quarter, which is a strong signal.</p>
+              </div>
+              <div class="db-transcript-block">
+                <div class="db-transcript-meta">
+                  <span class="db-transcript-time">4:32</span>
+                  <span class="db-transcript-speaker" style="color:var(--purple)">Speaker 3</span>
+                </div>
+                <p class="db-transcript-text">For Q3, I think we should prioritize the real-time collaboration module. It's been requested by 68% of enterprise customers in the last survey and directly ties to our retention goal.</p>
+              </div>
+              <div class="db-transcript-block">
+                <div class="db-transcript-meta">
+                  <span class="db-transcript-time">6:45</span>
+                  <span class="db-transcript-speaker" style="color:var(--accent)">Speaker 1</span>
+                </div>
+                <p class="db-transcript-text">Good point. We should also revisit the performance optimization work that's been deferred. The mobile team is seeing latency issues directly affecting conversion rates.</p>
+              </div>
+              <div class="db-transcript-block">
+                <div class="db-transcript-meta">
+                  <span class="db-transcript-time">9:10</span>
+                  <span class="db-transcript-speaker" style="color:var(--green)">Speaker 2</span>
+                </div>
+                <p class="db-transcript-text">I can take ownership of the collaboration module spec. We could have a draft ready by end of next week and open it for team review before locking scope.</p>
+              </div>
+              <div class="db-transcript-block">
+                <div class="db-transcript-meta">
+                  <span class="db-transcript-time">11:55</span>
+                  <span class="db-transcript-speaker" style="color:var(--purple)">Speaker 3</span>
+                </div>
+                <p class="db-transcript-text">I'll handle the performance audit. Let me coordinate with the infrastructure team and come back Thursday with timeline estimates and resource asks.</p>
+              </div>
+              <div class="db-listening">
+                <span class="db-listening-dot"></span>
+                <span class="db-listening-label">Listening…</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Speaker Time -->
+          <div class="db-card">
+            <div class="db-card-header">
+              <span class="db-card-title">Speaker Time</span>
+            </div>
+            <div class="db-speaker-row">
+              <div class="db-speaker-item">
+                <div class="db-speaker-label-row">
+                  <span class="db-speaker-name">Speaker 1</span>
+                  <span class="db-speaker-time">6.8 min (38.0%)</span>
+                </div>
+                <div class="db-bar-track"><div class="db-bar-fill" style="width:38%;background:var(--accent)"></div></div>
+              </div>
+              <div class="db-speaker-item">
+                <div class="db-speaker-label-row">
+                  <span class="db-speaker-name">Speaker 2</span>
+                  <span class="db-speaker-time">5.7 min (32.0%)</span>
+                </div>
+                <div class="db-bar-track"><div class="db-bar-fill" style="width:32%;background:var(--green)"></div></div>
+              </div>
+              <div class="db-speaker-item">
+                <div class="db-speaker-label-row">
+                  <span class="db-speaker-name">Speaker 3</span>
+                  <span class="db-speaker-time">3.4 min (19.0%)</span>
+                </div>
+                <div class="db-bar-track"><div class="db-bar-fill" style="width:19%;background:var(--purple)"></div></div>
+              </div>
+              <div class="db-speaker-item">
+                <div class="db-speaker-label-row">
+                  <span class="db-speaker-name">Speaker 4</span>
+                  <span class="db-speaker-time">2.0 min (11.0%)</span>
+                </div>
+                <div class="db-bar-track"><div class="db-bar-fill" style="width:11%;background:var(--amber)"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Speaking Activity chart -->
+          <!-- Pre-calculated for viewBox 0 0 500 140, PAD l=38 r=12 t=10 b=28, W=450 H=102 -->
+          <!-- Points: 11 evenly-spaced over 20min. ty(y)=112-y*1.02 tx(i)=i*45+38 -->
+          <!-- Data: [58,62,71,68,55,63,72,78,65,69,74] avg=67% -->
+          <div class="db-card">
+            <div class="db-card-header">
+              <span class="db-card-title">Speaking Activity</span>
+              <span class="db-card-meta" style="color:var(--accent)">avg 67%</span>
+            </div>
+            <svg class="db-chart-svg" height="140" viewBox="0 0 500 140" preserveAspectRatio="none">
+              <!-- grid lines + y labels -->
+              <line x1="38" y1="112" x2="488" y2="112" stroke="var(--border-subtle)" stroke-width="0.5" stroke-dasharray="3,4"/>
+              <text x="32" y="112" text-anchor="end" dominant-baseline="middle" style="font-size:10px;fill:var(--tx-3);font-family:var(--font-mono)">0</text>
+              <line x1="38" y1="87" x2="488" y2="87" stroke="var(--border-subtle)" stroke-width="0.5" stroke-dasharray="3,4"/>
+              <text x="32" y="87" text-anchor="end" dominant-baseline="middle" style="font-size:10px;fill:var(--tx-3);font-family:var(--font-mono)">25</text>
+              <line x1="38" y1="61" x2="488" y2="61" stroke="var(--border-subtle)" stroke-width="0.5" stroke-dasharray="3,4"/>
+              <text x="32" y="61" text-anchor="end" dominant-baseline="middle" style="font-size:10px;fill:var(--tx-3);font-family:var(--font-mono)">50</text>
+              <line x1="38" y1="36" x2="488" y2="36" stroke="var(--border-subtle)" stroke-width="0.5" stroke-dasharray="3,4"/>
+              <text x="32" y="36" text-anchor="end" dominant-baseline="middle" style="font-size:10px;fill:var(--tx-3);font-family:var(--font-mono)">75</text>
+              <line x1="38" y1="10" x2="488" y2="10" stroke="var(--border-subtle)" stroke-width="0.5" stroke-dasharray="3,4"/>
+              <text x="32" y="10" text-anchor="end" dominant-baseline="middle" style="font-size:10px;fill:var(--tx-3);font-family:var(--font-mono)">100</text>
+              <!-- area fill -->
+              <polygon points="38,112 38,53 83,49 128,40 173,43 218,56 263,48 308,39 353,32 398,46 443,42 488,37 488,112" style="fill:var(--accent);opacity:0.07"/>
+              <!-- line -->
+              <polyline points="38,53 83,49 128,40 173,43 218,56 263,48 308,39 353,32 398,46 443,42 488,37" fill="none" style="stroke:var(--accent);stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round"/>
+              <!-- dots -->
+              <circle cx="38"  cy="53" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--accent);stroke-width:1.5"/>
+              <circle cx="83"  cy="49" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--accent);stroke-width:1.5"/>
+              <circle cx="128" cy="40" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--accent);stroke-width:1.5"/>
+              <circle cx="173" cy="43" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--accent);stroke-width:1.5"/>
+              <circle cx="218" cy="56" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--accent);stroke-width:1.5"/>
+              <circle cx="263" cy="48" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--accent);stroke-width:1.5"/>
+              <circle cx="308" cy="39" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--accent);stroke-width:1.5"/>
+              <circle cx="353" cy="32" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--accent);stroke-width:1.5"/>
+              <circle cx="398" cy="46" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--accent);stroke-width:1.5"/>
+              <circle cx="443" cy="42" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--accent);stroke-width:1.5"/>
+              <circle cx="488" cy="37" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--accent);stroke-width:1.5"/>
+              <!-- x labels -->
+              <text x="38"  y="135" style="font-size:10px;fill:var(--tx-3);font-family:var(--font-mono)">0:00</text>
+              <text x="488" y="135" text-anchor="end" style="font-size:10px;fill:var(--tx-3);font-family:var(--font-mono)">20:00</text>
+            </svg>
+          </div>
+
+          <!-- Focus Level chart -->
+          <!-- Data: [72,76,81,78,69,75,83,87,80,78,82] avg=78% -->
+          <div class="db-card">
+            <div class="db-card-header">
+              <span class="db-card-title">Focus Level</span>
+              <span class="db-card-meta" style="color:var(--purple)">avg 78%</span>
+            </div>
+            <svg class="db-chart-svg" height="140" viewBox="0 0 500 140" preserveAspectRatio="none">
+              <line x1="38" y1="112" x2="488" y2="112" stroke="var(--border-subtle)" stroke-width="0.5" stroke-dasharray="3,4"/>
+              <text x="32" y="112" text-anchor="end" dominant-baseline="middle" style="font-size:10px;fill:var(--tx-3);font-family:var(--font-mono)">0</text>
+              <line x1="38" y1="87" x2="488" y2="87" stroke="var(--border-subtle)" stroke-width="0.5" stroke-dasharray="3,4"/>
+              <text x="32" y="87" text-anchor="end" dominant-baseline="middle" style="font-size:10px;fill:var(--tx-3);font-family:var(--font-mono)">25</text>
+              <line x1="38" y1="61" x2="488" y2="61" stroke="var(--border-subtle)" stroke-width="0.5" stroke-dasharray="3,4"/>
+              <text x="32" y="61" text-anchor="end" dominant-baseline="middle" style="font-size:10px;fill:var(--tx-3);font-family:var(--font-mono)">50</text>
+              <line x1="38" y1="36" x2="488" y2="36" stroke="var(--border-subtle)" stroke-width="0.5" stroke-dasharray="3,4"/>
+              <text x="32" y="36" text-anchor="end" dominant-baseline="middle" style="font-size:10px;fill:var(--tx-3);font-family:var(--font-mono)">75</text>
+              <line x1="38" y1="10" x2="488" y2="10" stroke="var(--border-subtle)" stroke-width="0.5" stroke-dasharray="3,4"/>
+              <text x="32" y="10" text-anchor="end" dominant-baseline="middle" style="font-size:10px;fill:var(--tx-3);font-family:var(--font-mono)">100</text>
+              <polygon points="38,112 38,39 83,34 128,29 173,32 218,42 263,36 308,27 353,23 398,30 443,32 488,28 488,112" style="fill:var(--purple);opacity:0.07"/>
+              <polyline points="38,39 83,34 128,29 173,32 218,42 263,36 308,27 353,23 398,30 443,32 488,28" fill="none" style="stroke:var(--purple);stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round"/>
+              <circle cx="38"  cy="39" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--purple);stroke-width:1.5"/>
+              <circle cx="83"  cy="34" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--purple);stroke-width:1.5"/>
+              <circle cx="128" cy="29" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--purple);stroke-width:1.5"/>
+              <circle cx="173" cy="32" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--purple);stroke-width:1.5"/>
+              <circle cx="218" cy="42" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--purple);stroke-width:1.5"/>
+              <circle cx="263" cy="36" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--purple);stroke-width:1.5"/>
+              <circle cx="308" cy="27" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--purple);stroke-width:1.5"/>
+              <circle cx="353" cy="23" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--purple);stroke-width:1.5"/>
+              <circle cx="398" cy="30" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--purple);stroke-width:1.5"/>
+              <circle cx="443" cy="32" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--purple);stroke-width:1.5"/>
+              <circle cx="488" cy="28" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--purple);stroke-width:1.5"/>
+              <text x="38"  y="135" style="font-size:10px;fill:var(--tx-3);font-family:var(--font-mono)">0:00</text>
+              <text x="488" y="135" text-anchor="end" style="font-size:10px;fill:var(--tx-3);font-family:var(--font-mono)">20:00</text>
+            </svg>
+          </div>
+
+          <!-- Agenda Adherence chart -->
+          <!-- yTicks [20,40,65,90]. ty(y)=112-y*1.02. Data: [78,82,85,80,73,77,84,88,85,87,89] avg=83% -->
+          <div class="db-card">
+            <div class="db-card-header">
+              <span class="db-card-title">Agenda Adherence</span>
+              <span class="db-card-meta" style="color:var(--green)">avg 83%</span>
+            </div>
+            <svg class="db-chart-svg" height="140" viewBox="0 0 500 140" preserveAspectRatio="none">
+              <line x1="38" y1="92" x2="488" y2="92" stroke="var(--border-subtle)" stroke-width="0.5" stroke-dasharray="3,4"/>
+              <text x="32" y="92" text-anchor="end" dominant-baseline="middle" style="font-size:10px;fill:var(--tx-3);font-family:var(--font-mono)">20</text>
+              <line x1="38" y1="71" x2="488" y2="71" stroke="var(--border-subtle)" stroke-width="0.5" stroke-dasharray="3,4"/>
+              <text x="32" y="71" text-anchor="end" dominant-baseline="middle" style="font-size:10px;fill:var(--tx-3);font-family:var(--font-mono)">40</text>
+              <line x1="38" y1="46" x2="488" y2="46" stroke="var(--border-subtle)" stroke-width="0.5" stroke-dasharray="3,4"/>
+              <text x="32" y="46" text-anchor="end" dominant-baseline="middle" style="font-size:10px;fill:var(--tx-3);font-family:var(--font-mono)">65</text>
+              <line x1="38" y1="20" x2="488" y2="20" stroke="var(--border-subtle)" stroke-width="0.5" stroke-dasharray="3,4"/>
+              <text x="32" y="20" text-anchor="end" dominant-baseline="middle" style="font-size:10px;fill:var(--tx-3);font-family:var(--font-mono)">90</text>
+              <polygon points="38,112 38,32 83,28 128,25 173,30 218,38 263,33 308,26 353,22 398,25 443,23 488,21 488,112" style="fill:var(--green);opacity:0.07"/>
+              <polyline points="38,32 83,28 128,25 173,30 218,38 263,33 308,26 353,22 398,25 443,23 488,21" fill="none" style="stroke:var(--green);stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round"/>
+              <circle cx="38"  cy="32" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--green);stroke-width:1.5"/>
+              <circle cx="83"  cy="28" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--green);stroke-width:1.5"/>
+              <circle cx="128" cy="25" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--green);stroke-width:1.5"/>
+              <circle cx="173" cy="30" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--green);stroke-width:1.5"/>
+              <circle cx="218" cy="38" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--green);stroke-width:1.5"/>
+              <circle cx="263" cy="33" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--green);stroke-width:1.5"/>
+              <circle cx="308" cy="26" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--green);stroke-width:1.5"/>
+              <circle cx="353" cy="22" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--green);stroke-width:1.5"/>
+              <circle cx="398" cy="25" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--green);stroke-width:1.5"/>
+              <circle cx="443" cy="23" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--green);stroke-width:1.5"/>
+              <circle cx="488" cy="21" r="2.5" style="fill:oklch(0.978 0.010 255);stroke:var(--green);stroke-width:1.5"/>
+              <text x="38"  y="135" style="font-size:10px;fill:var(--tx-3);font-family:var(--font-mono)">0:00</text>
+              <text x="488" y="135" text-anchor="end" style="font-size:10px;fill:var(--tx-3);font-family:var(--font-mono)">20:00</text>
+            </svg>
+          </div>
+
+        </div><!-- /db-content -->
+      </div>
+
+      <!-- Sidebar: logo + participant tiles (desktop) -->
+      <div class="meeting-sidebar">
+        <!-- Metric rings — Live Metrics -->
+        <!-- circ = 2π×38 = 238.76. offset = circ × (1-pct) -->
+        <!-- Speaking 64%: offset=86. Focus 78%: offset=53. Agenda 87%: offset=31 -->
+        <div class="metric-rings-section">
+          <div class="metric-rings-label">Live Metrics</div>
+          <div class="metric-rings-top">
+            <!-- Speaking Rate 64% — accent blue -->
+            <div class="metric-ring-wrap">
+              <div class="metric-ring-svg-wrap">
+                <svg width="80" height="80" viewBox="0 0 80 80">
+                  <circle cx="40" cy="40" r="33" fill="none" stroke="var(--border)" stroke-width="5.5"/>
+                  <circle cx="40" cy="40" r="33" fill="none" stroke="var(--accent)" stroke-width="5.5"
+                    stroke-dasharray="207.3" stroke-dashoffset="74.6" stroke-linecap="round"/>
+                </svg>
+                <div class="metric-ring-value">64%</div>
+              </div>
+              <div class="metric-ring-name">Speaking Rate</div>
+            </div>
+            <!-- Focus Level 78% — green (≥75) -->
+            <div class="metric-ring-wrap">
+              <div class="metric-ring-svg-wrap">
+                <svg width="80" height="80" viewBox="0 0 80 80">
+                  <circle cx="40" cy="40" r="33" fill="none" stroke="var(--border)" stroke-width="5.5"/>
+                  <circle cx="40" cy="40" r="33" fill="none" stroke="var(--green)" stroke-width="5.5"
+                    stroke-dasharray="207.3" stroke-dashoffset="45.6" stroke-linecap="round"/>
+                </svg>
+                <div class="metric-ring-value">78%</div>
+              </div>
+              <div class="metric-ring-name">Focus Level</div>
+            </div>
+          </div>
+          <div class="metric-rings-bottom">
+            <!-- Agenda Adherence 87% — green (≥70) -->
+            <div class="metric-ring-wrap">
+              <div class="metric-ring-svg-wrap">
+                <svg width="80" height="80" viewBox="0 0 80 80">
+                  <circle cx="40" cy="40" r="33" fill="none" stroke="var(--border)" stroke-width="5.5"/>
+                  <circle cx="40" cy="40" r="33" fill="none" stroke="var(--green)" stroke-width="5.5"
+                    stroke-dasharray="207.3" stroke-dashoffset="26.9" stroke-linecap="round"/>
+                </svg>
+                <div class="metric-ring-value">87%</div>
+              </div>
+              <div class="metric-ring-name">Agenda Adherence</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="meeting-sidebar-logo">
+          <img src="isik_logo.png" alt="Işık University">
+        </div>
+        <div class="meeting-sidetiles">
+
+          <!-- Fatih A. -->
+          <div class="sidetile sidetile--active">
+            <div class="sidetile-avatar">
+              <svg viewBox="0 0 44 36" width="28" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="22" cy="12" r="9" fill="rgba(54,126,255,0.52)"/>
+                <ellipse cx="22" cy="32" rx="14" ry="7" fill="rgba(54,126,255,0.28)"/>
+              </svg>
+            </div>
+            <div class="sidetile-name">Fatih A.</div>
+            <svg class="sidetile-wave" viewBox="0 0 22 12" width="22" xmlns="http://www.w3.org/2000/svg">
+              <rect x="0" y="4" width="2.6" height="4" rx="1.3" fill="rgba(54,126,255,0.60)"/>
+              <rect x="3.5" y="1" width="2.6" height="10" rx="1.3" fill="rgba(54,126,255,0.85)"/>
+              <rect x="7" y="3" width="2.6" height="6" rx="1.3" fill="rgba(54,126,255,0.70)"/>
+              <rect x="10.5" y="0" width="2.6" height="12" rx="1.3" fill="rgba(54,126,255,0.90)"/>
+              <rect x="14" y="2" width="2.6" height="8" rx="1.3" fill="rgba(54,126,255,0.78)"/>
+              <rect x="17.5" y="5" width="2.6" height="5" rx="1.3" fill="rgba(54,126,255,0.55)"/>
+            </svg>
+            <div class="sidetile-contact">
+              <a href="mailto:fatih_altinisik@outlook.com">✉ Email</a>
+              <a href="https://www.linkedin.com/in/fatih-altinisik/" target="_blank" rel="noopener">in LinkedIn</a>
+            </div>
+          </div>
+
+          <!-- Hasan B. -->
+          <div class="sidetile sidetile--active">
+            <div class="sidetile-avatar">
+              <svg viewBox="0 0 44 36" width="28" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="22" cy="12" r="9" fill="rgba(54,126,255,0.48)"/>
+                <ellipse cx="22" cy="32" rx="14" ry="7" fill="rgba(54,126,255,0.26)"/>
+              </svg>
+            </div>
+            <div class="sidetile-name">Hasan B.</div>
+            <svg class="sidetile-wave" viewBox="0 0 22 12" width="22" xmlns="http://www.w3.org/2000/svg">
+              <rect x="0" y="3" width="2.6" height="6" rx="1.3" fill="rgba(54,126,255,0.55)"/>
+              <rect x="3.5" y="1" width="2.6" height="9" rx="1.3" fill="rgba(54,126,255,0.75)"/>
+              <rect x="7" y="2" width="2.6" height="8" rx="1.3" fill="rgba(54,126,255,0.65)"/>
+              <rect x="10.5" y="0" width="2.6" height="11" rx="1.3" fill="rgba(54,126,255,0.82)"/>
+              <rect x="14" y="3" width="2.6" height="7" rx="1.3" fill="rgba(54,126,255,0.68)"/>
+              <rect x="17.5" y="4" width="2.6" height="5" rx="1.3" fill="rgba(54,126,255,0.50)"/>
+            </svg>
+            <!-- TODO: update with Hasan's actual contact links -->
+            <div class="sidetile-contact">
+              <a href="mailto:Hasanberberkyr@gmail.com">✉ Email</a>
+              <a href="https://www.linkedin.com/in/hasan-berberkayar-157b70280" target="_blank" rel="noopener">in LinkedIn</a>
+            </div>
+          </div>
+
+          <!-- Erdem K. -->
+          <div class="sidetile sidetile--active">
+            <div class="sidetile-avatar">
+              <svg viewBox="0 0 44 36" width="28" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="22" cy="12" r="9" fill="rgba(54,126,255,0.44)"/>
+                <ellipse cx="22" cy="32" rx="14" ry="7" fill="rgba(54,126,255,0.22)"/>
+              </svg>
+            </div>
+            <div class="sidetile-name">Erdem K.</div>
+            <svg class="sidetile-wave" viewBox="0 0 22 12" width="22" xmlns="http://www.w3.org/2000/svg">
+              <rect x="0" y="4" width="2.6" height="5" rx="1.3" fill="rgba(54,126,255,0.50)"/>
+              <rect x="3.5" y="2" width="2.6" height="8" rx="1.3" fill="rgba(54,126,255,0.70)"/>
+              <rect x="7" y="3" width="2.6" height="7" rx="1.3" fill="rgba(54,126,255,0.60)"/>
+              <rect x="10.5" y="1" width="2.6" height="10" rx="1.3" fill="rgba(54,126,255,0.80)"/>
+              <rect x="14" y="2" width="2.6" height="8" rx="1.3" fill="rgba(54,126,255,0.65)"/>
+              <rect x="17.5" y="5" width="2.6" height="4" rx="1.3" fill="rgba(54,126,255,0.45)"/>
+            </svg>
+            <!-- TODO: update with Erdem's actual contact links -->
+            <div class="sidetile-contact">
+              <a href="mailto:erdemkaraahmet@gmail.com">✉ Email</a>
+              <a href="https://www.linkedin.com/in/erdemkaraahmet" target="_blank" rel="noopener">in LinkedIn</a>
+            </div>
+          </div>
+
+          <!-- AI Insights -->
+          <div class="sidetile sidetile--insights">
+            <div class="insights-label">AI Insights</div>
+            <div class="insights-row"><span>Focus</span><strong>78%</strong></div>
+            <div class="insights-bar"><div class="insights-bar-fill" style="width:78%"></div></div>
+            <div class="insights-row" style="margin-top:2px"><span>Adherence</span><strong>87%</strong></div>
+            <div class="insights-bar"><div class="insights-bar-fill" style="width:87%"></div></div>
+          </div>
+
+        </div>
+      </div>
+    </div><!-- /meeting-body -->
+
+    <!-- Mobile participants panel (toggled via toolbar button) -->
+    <div class="mobile-participants" id="mobile-participants">
+      <div class="mobile-participants-inner">
+        <div class="mobile-tile">
+          <div class="mobile-tile-header">
+            <svg viewBox="0 0 44 36" width="28" xmlns="http://www.w3.org/2000/svg"><circle cx="22" cy="12" r="9" fill="rgba(54,126,255,0.52)"/><ellipse cx="22" cy="32" rx="14" ry="7" fill="rgba(54,126,255,0.28)"/></svg>
+            <div class="mobile-tile-name">Fatih Altınışık</div>
+          </div>
+          <div class="mobile-tile-links">
+            <a class="mobile-tile-link" href="mailto:fatih_altinisik@outlook.com">✉ Email</a>
+            <a class="mobile-tile-link" href="https://www.linkedin.com/in/fatih-altinisik/" target="_blank" rel="noopener">in LinkedIn</a>
+          </div>
+        </div>
+        <div class="mobile-tile">
+          <div class="mobile-tile-header">
+            <svg viewBox="0 0 44 36" width="28" xmlns="http://www.w3.org/2000/svg"><circle cx="22" cy="12" r="9" fill="rgba(54,126,255,0.48)"/><ellipse cx="22" cy="32" rx="14" ry="7" fill="rgba(54,126,255,0.26)"/></svg>
+            <div class="mobile-tile-name">Hasan Berberkayar</div>
+          </div>
+          <div class="mobile-tile-links">
+            <!-- TODO: update Hasan's contact -->
+            <a class="mobile-tile-link" href="mailto:Hasanberberkyr@gmail.com">✉ Email</a>
+            <a class="mobile-tile-link" href="https://www.linkedin.com/in/hasan-berberkayar-157b70280" target="_blank" rel="noopener">in LinkedIn</a>
+          </div>
+        </div>
+        <div class="mobile-tile">
+          <div class="mobile-tile-header">
+            <svg viewBox="0 0 44 36" width="28" xmlns="http://www.w3.org/2000/svg"><circle cx="22" cy="12" r="9" fill="rgba(54,126,255,0.44)"/><ellipse cx="22" cy="32" rx="14" ry="7" fill="rgba(54,126,255,0.22)"/></svg>
+            <div class="mobile-tile-name">Erdem Karaahmet</div>
+          </div>
+          <div class="mobile-tile-links">
+            <!-- TODO: update Erdem's contact -->
+            <a class="mobile-tile-link" href="mailto:erdemkaraahmet@gmail.com">✉ Email</a>
+            <a class="mobile-tile-link" href="https://www.linkedin.com/in/erdemkaraahmet" target="_blank" rel="noopener">in LinkedIn</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast notifications -->
+    <div class="toast-strip">
+      <div class="alert-toast" style="border-left-color:#D97706; border-color:rgba(217,119,6,0.22);">
+        <div class="alert-toast-header" style="background:rgba(217,119,6,0.04); border-bottom-color:rgba(217,119,6,0.12);">
+          <div class="alert-toast-app"><span class="alert-toast-app-dot" style="background:#D97706;"></span>MeetAI</div>
+          <div class="alert-toast-time">10:38</div>
+        </div>
+        <div class="alert-toast-body">
+          <div class="alert-toast-title" style="color:#D97706;">↓ Speaking Rate Dropped</div>
+          <div class="alert-toast-msg">Speaking rate fell below 40%. Consider prompting quieter participants.</div>
+          <div class="alert-toast-actions">
+            <span class="alert-toast-dismiss">Dismiss</span>
+            <span class="alert-toast-cta" style="color:#D97706;">View Analytics →</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="alert-toast" style="border-left-color:var(--green); border-color:rgba(50,180,120,0.22);">
+        <div class="alert-toast-header" style="background:rgba(50,180,120,0.04); border-bottom-color:rgba(50,180,120,0.12);">
+          <div class="alert-toast-app"><span class="alert-toast-app-dot" style="background:var(--green);"></span>MeetAI</div>
+          <div class="alert-toast-time">10:46</div>
+        </div>
+        <div class="alert-toast-body">
+          <div class="alert-toast-title" style="color:var(--green);">✓ Focus Recovered</div>
+          <div class="alert-toast-msg">Focus rate climbed above 70%. Participants are re-engaged with the agenda.</div>
+          <div class="alert-toast-actions">
+            <span class="alert-toast-dismiss">Dismiss</span>
+            <span class="alert-toast-cta" style="color:var(--green);">View Analytics →</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="alert-toast">
+        <div class="alert-toast-header">
+          <div class="alert-toast-app"><span class="alert-toast-app-dot"></span>MeetAI</div>
+          <div class="alert-toast-time">10:42</div>
+        </div>
+        <div class="alert-toast-body">
+          <div class="alert-toast-title">⚠ Agenda Drift Detected</div>
+          <div class="alert-toast-msg">3 participants disengaged. Discussion has moved off-topic.</div>
+          <div class="alert-toast-actions">
+            <span class="alert-toast-dismiss">Dismiss</span>
+            <span class="alert-toast-cta">View Analytics →</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="meeting-toolbar">
+      <div class="toolbar-timer">28:42</div>
+      <div class="toolbar-btn"></div>
+      <div class="toolbar-btn"></div>
+      <div class="toolbar-btn toolbar-btn--end"></div>
+      <div class="toolbar-btn toolbar-btn--off"></div>
+      <div class="toolbar-btn toolbar-btn--off"></div>
+      <div class="toolbar-participants">5 participants</div>
+      <button class="toolbar-participants-toggle" id="participants-toggle" aria-expanded="false">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 2a2.5 2.5 0 1 1 0 5A2.5 2.5 0 0 1 8 2zm0 7c3 0 5.5 1.3 5.5 2.5V13h-11v-1.5C2.5 10.3 5 9 8 9z" fill="currentColor"/></svg>
+        Participants
+        <svg id="toggle-chevron" width="10" height="10" viewBox="0 0 10 10" fill="none" style="transition:transform 220ms">
+          <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+
+  </div><!-- /meeting-window -->
+</div><!-- /hero-wrap -->
+
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- THE PROBLEM                                                  -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<section class="section" id="problem">
+  <div class="reveal"><span class="section-label">The Problem</span></div>
+  <div class="reveal reveal-d1">
+    <h2 class="section-title">Meetings Are Broken — and Nobody Knows While It Is Happening</h2>
+  </div>
+  <div class="reveal reveal-d2">
+    <div class="problem-stat">
+      <span class="problem-stat-number">31 hrs</span>
+      <span class="problem-stat-label">lost per knowledge worker, per month, to unproductive meetings</span>
+    </div>
+    <p class="section-body">
+      Remote and hybrid work has made video conferencing central to global collaboration. Yet moderators have no real-time visibility into participant engagement, focus levels, or agenda drift. Existing tools capture audio only, and insights arrive only after the meeting has already ended.
+    </p>
+  </div>
+  <div class="problem-grid">
+    <div class="problem-card reveal reveal-d1">
+      <div class="problem-card-title">Audio-Only Blind Spots</div>
+      <div class="problem-card-body">Current tools miss head orientation, visual attention signals, and lip-based speaker verification. Critical engagement data remains entirely uncaptured.</div>
+    </div>
+    <div class="problem-card reveal reveal-d2">
+      <div class="problem-card-title">No Real-Time Intervention</div>
+      <div class="problem-card-body">Insights are delivered post-meeting, long after the damage is done. No mechanism alerts moderators while the session is still running.</div>
+    </div>
+    <div class="problem-card reveal reveal-d3">
+      <div class="problem-card-title">Platform Lock-In</div>
+      <div class="problem-card-body">Platform-native AI solutions require bot invites or proprietary subscriptions, tying organizations to a single vendor ecosystem.</div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- SOLUTION                                                     -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<section class="section" id="solution">
+  <div class="reveal"><span class="section-label">Proposed Solution</span></div>
+  <div class="reveal reveal-d1">
+    <h2 class="section-title">A Standalone Desktop Application That Sees, Hears, and Understands</h2>
+  </div>
+  <p class="solution-body reveal reveal-d2">
+    MeetAI is a standalone Electron.js desktop client that operates alongside any video conferencing platform — without requiring API integrations, bot invites, or vendor agreements. It captures screen frames and system audio directly at the OS level, routes data through three parallel AI pipelines running on our own infrastructure, and delivers live coaching alerts to the moderator in real time.
+  </p>
+  <p class="solution-body reveal reveal-d3" style="margin-top: 14px;">
+    Raw audio and video streams are processed server-side and immediately discarded after feature extraction. No media data is stored or retained at any point.
+  </p>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- HOW IT WORKS — Three Pipelines                              -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<section class="section" id="how-it-works">
+  <div class="reveal"><span class="section-label">Implementation</span></div>
+  <div class="reveal reveal-d1"><h2 class="section-title">Three Parallel AI Pipelines</h2></div>
+  <div class="pipelines-grid">
+
+    <!-- Vision -->
+    <div class="pipeline-card pipeline-card--vision reveal reveal-d1">
+      <div class="pipeline-card-viz">
+        <svg viewBox="10 12 180 58" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+          <line x1="100" y1="4" x2="100" y2="76" stroke="rgba(54,126,255,0.12)" stroke-width="0.8"/>
+          <line x1="4" y1="40" x2="196" y2="40" stroke="rgba(54,126,255,0.12)" stroke-width="0.8"/>
+          <text x="4" y="32" fill="rgba(54,126,255,0.38)" font-size="7" font-family="DM Sans,sans-serif">yaw</text>
+          <text x="162" y="43" fill="rgba(54,126,255,0.38)" font-size="7" font-family="DM Sans,sans-serif">pitch</text>
+          <path d="M42,56 C60,52 80,46 100,40 C120,34 143,28 163,22" fill="none" stroke="rgba(54,126,255,0.28)" stroke-width="1.4" stroke-dasharray="4,3"/>
+          <circle cx="42" cy="56" r="2.2" fill="rgba(54,126,255,0.30)"/>
+          <circle cx="62" cy="51" r="2.5" fill="rgba(54,126,255,0.40)"/>
+          <circle cx="82" cy="45" r="2.8" fill="rgba(54,126,255,0.50)"/>
+          <circle cx="100" cy="40" r="12" fill="rgba(54,126,255,0.07)" stroke="rgba(54,126,255,0.38)" stroke-width="1"/>
+          <line x1="88" y1="40" x2="112" y2="40" stroke="rgba(54,126,255,0.44)" stroke-width="0.9"/>
+          <line x1="100" y1="28" x2="100" y2="52" stroke="rgba(54,126,255,0.44)" stroke-width="0.9"/>
+          <circle cx="100" cy="40" r="3.5" fill="rgba(54,126,255,0.68)"/>
+          <line x1="100" y1="40" x2="126" y2="29" stroke="rgba(54,126,255,0.48)" stroke-width="1.2"/>
+          <polygon points="126,29 121,32 124,35" fill="rgba(54,126,255,0.48)"/>
+          <circle cx="143" cy="28" r="2.2" fill="rgba(54,126,255,0.32)"/>
+          <circle cx="163" cy="22" r="2" fill="rgba(54,126,255,0.22)"/>
+          <rect x="0" y="68" width="200" height="12" fill="rgba(54,126,255,0.05)"/>
+          <text x="100" y="76" text-anchor="middle" fill="rgba(54,126,255,0.48)" font-size="7" font-family="DM Mono,monospace">MAR: 0.42  ·  Iris dev: 8°  ·  Focus: 82%</text>
+        </svg>
+      </div>
+      <div class="pipeline-card-content">
+        <div class="pipeline-badge badge-vision">Vision Module</div>
+        <div class="pipeline-card-title">Real-Time Focus Quantification</div>
+        <div class="pipeline-card-body">Screen frames are sampled at 10 FPS. MediaPipe FaceMesh tracks faces while head pose, iris position, and MAR are combined to estimate participant focus and verify active speakers.</div>
+      </div>
+    </div>
+
+    <!-- Audio -->
+    <div class="pipeline-card pipeline-card--audio reveal reveal-d2">
+      <div class="pipeline-card-viz">
+        <svg viewBox="0 0 170 76" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+          <rect x="4" y="46" width="4" height="18" rx="2" fill="rgba(54,126,255,0.32)"/>
+          <rect x="10" y="32" width="4" height="32" rx="2" fill="rgba(54,126,255,0.44)"/>
+          <rect x="16" y="40" width="4" height="24" rx="2" fill="rgba(54,126,255,0.36)"/>
+          <rect x="22" y="20" width="4" height="44" rx="2" fill="rgba(54,126,255,0.50)"/>
+          <rect x="28" y="34" width="4" height="30" rx="2" fill="rgba(54,126,255,0.40)"/>
+          <rect x="34" y="44" width="4" height="20" rx="2" fill="rgba(54,126,255,0.32)"/>
+          <rect x="40" y="28" width="4" height="36" rx="2" fill="rgba(54,126,255,0.42)"/>
+          <rect x="46" y="50" width="4" height="14" rx="2" fill="rgba(54,126,255,0.28)"/>
+          <rect x="52" y="36" width="4" height="28" rx="2" fill="rgba(54,126,255,0.36)"/>
+          <rect x="58" y="16" width="4" height="48" rx="2" fill="rgba(54,126,255,0.46)"/>
+          <line x1="63" y1="4" x2="63" y2="62" stroke="rgba(54,126,255,0.16)" stroke-width="0.7" stroke-dasharray="3,3"/>
+          <rect x="65" y="42" width="4" height="22" rx="2" fill="rgba(52,168,120,0.34)"/>
+          <rect x="71" y="26" width="4" height="38" rx="2" fill="rgba(52,168,120,0.44)"/>
+          <rect x="77" y="36" width="4" height="28" rx="2" fill="rgba(52,168,120,0.36)"/>
+          <rect x="83" y="10" width="4" height="54" rx="2" fill="rgba(52,168,120,0.52)"/>
+          <rect x="89" y="30" width="4" height="34" rx="2" fill="rgba(52,168,120,0.40)"/>
+          <rect x="95" y="46" width="4" height="18" rx="2" fill="rgba(52,168,120,0.30)"/>
+          <rect x="101" y="20" width="4" height="44" rx="2" fill="rgba(52,168,120,0.42)"/>
+          <line x1="107" y1="4" x2="107" y2="62" stroke="rgba(54,126,255,0.16)" stroke-width="0.7" stroke-dasharray="3,3"/>
+          <rect x="109" y="48" width="4" height="16" rx="2" fill="rgba(54,126,255,0.26)"/>
+          <rect x="115" y="32" width="4" height="32" rx="2" fill="rgba(54,126,255,0.32)"/>
+          <rect x="121" y="40" width="4" height="24" rx="2" fill="rgba(54,126,255,0.28)"/>
+          <rect x="127" y="22" width="4" height="42" rx="2" fill="rgba(54,126,255,0.38)"/>
+          <rect x="133" y="36" width="4" height="28" rx="2" fill="rgba(54,126,255,0.30)"/>
+          <rect x="139" y="52" width="4" height="12" rx="2" fill="rgba(54,126,255,0.22)"/>
+          <rect x="145" y="28" width="4" height="36" rx="2" fill="rgba(54,126,255,0.34)"/>
+          <rect x="151" y="44" width="4" height="20" rx="2" fill="rgba(54,126,255,0.26)"/>
+          <rect x="157" y="18" width="4" height="46" rx="2" fill="rgba(54,126,255,0.40)"/>
+          <rect x="163" y="36" width="4" height="28" rx="2" fill="rgba(54,126,255,0.30)"/>
+          <rect x="0" y="62" width="170" height="14" fill="rgba(54,126,255,0.04)"/>
+          <text x="33" y="72" text-anchor="middle" fill="rgba(54,126,255,0.62)" font-size="7" font-family="DM Sans,sans-serif">Fatih A.</text>
+          <text x="83" y="72" text-anchor="middle" fill="rgba(52,168,120,0.72)" font-size="7" font-family="DM Sans,sans-serif">Hasan B.</text>
+          <text x="136" y="72" text-anchor="middle" fill="rgba(54,126,255,0.55)" font-size="7" font-family="DM Sans,sans-serif">Erdem K.</text>
+        </svg>
+      </div>
+      <div class="pipeline-card-content">
+        <div class="pipeline-badge badge-audio">Audio Module</div>
+        <div class="pipeline-card-title">Speaker-Aware Audio Analysis</div>
+        <div class="pipeline-card-body">System audio is captured directly from the device. VAD isolates speech, Pyannote separates speakers, and Whisper transcribes who spoke, when, and for how long.</div>
+      </div>
+    </div>
+
+    <!-- NLP -->
+    <div class="pipeline-card pipeline-card--nlp reveal reveal-d3">
+      <div class="pipeline-card-viz">
+        <svg viewBox="10 16 180 56" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+          <text x="100" y="26" text-anchor="middle" fill="rgba(180,60,180,0.42)" font-size="9" font-family="DM Sans,sans-serif" font-weight="500">Adherence Score</text>
+          <rect x="20" y="34" width="160" height="14" rx="7" fill="rgba(180,60,180,0.08)"/>
+          <rect x="20" y="34" width="127" height="14" rx="7" fill="rgba(180,60,180,0.34)"/>
+          <circle cx="149" cy="41" r="4" fill="rgba(230,39,116,0.55)"/>
+          <text x="100" y="63" text-anchor="middle" fill="rgba(180,60,180,0.60)" font-size="11" font-family="DM Mono,monospace" font-weight="700">79.0%</text>
+        </svg>
+      </div>
+      <div class="pipeline-card-content">
+        <div class="pipeline-badge badge-nlp">NLP Module</div>
+        <div class="pipeline-card-title">Semantic Agenda Tracking</div>
+        <div class="pipeline-card-body">A self-hosted Qwen2.5 3B model compares transcript segments with agenda topics and produces a live Agenda Adherence Score, showing when discussion starts to drift.</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- COMPARISON TABLE                                             -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<section class="section" id="comparison">
+  <div class="reveal"><span class="section-label">Competitive Landscape</span></div>
+  <div class="reveal reveal-d1"><h2 class="section-title">What Existing Tools Get Wrong</h2></div>
+  <p class="section-body reveal reveal-d2">
+    Current solutions are reactive, audio-only, and platform-bound. MeetAI is the only solution combining multimodal sensing, real-time intervention, and privacy-by-design in a single deployable desktop client.
+  </p>
+  <div class="comparison-wrap reveal reveal-d3">
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th style="width:22%">Feature</th>
+          <th style="width:26%">Bot-Based Tools</th>
+          <th style="width:26%">Native Platform Tools</th>
+          <th class="col-meetai" style="width:26%">MeetAI</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="col-feature">Data Analysis</td>
+          <td>Audio and Text Only</td>
+          <td>Audio and Text Only</td>
+          <td class="col-meetai"><span class="check-icon">✓</span>Audio + Visual + NLP</td>
+        </tr>
+        <tr>
+          <td class="col-feature">Intervention Timing</td>
+          <td>Post-Meeting Only</td>
+          <td>Post-Meeting Only</td>
+          <td class="col-meetai"><span class="check-icon">✓</span>Real-Time Alerts</td>
+        </tr>
+        <tr>
+          <td class="col-feature">Platform Dependency</td>
+          <td>Bot Integration Required</td>
+          <td>Vendor Lock-In</td>
+          <td class="col-meetai"><span class="check-icon">✓</span>Independent Desktop Capture</td>
+        </tr>
+        <tr>
+          <td class="col-feature">Attention Tracking</td>
+          <td>None</td>
+          <td>None</td>
+          <td class="col-meetai"><span class="check-icon">✓</span>Head Pose + MAR</td>
+        </tr>
+        <tr>
+          <td class="col-feature">Data Privacy</td>
+          <td>Cloud Storage</td>
+          <td>Cloud Storage</td>
+          <td class="col-meetai"><span class="check-icon">✓</span>No Media Retention</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- ARCHITECTURE + OUTCOMES                                      -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<section class="section" id="outcomes">
+  <div class="arch-outcomes-grid">
+    <div class="arch-panel arch-panel--left">
+      <div class="reveal"><span class="section-label">Architecture</span></div>
+      <div class="reveal reveal-d1"><h2 class="section-title">Three-Layer System Design</h2></div>
+      <p class="section-body reveal reveal-d2">MeetAI separates concerns across three fully isolated layers, enabling independent scaling and hot-swappable ML models without modifying the core orchestrator.</p>
+      <ul class="arch-layer-list">
+        <li class="arch-layer reveal reveal-d2">
+          <span class="arch-layer-dot"></span>
+          <div>
+            <div class="arch-layer-name">Frontend — Electron.js + React + TypeScript</div>
+            <div class="arch-layer-desc">OS-level media capture, real-time dashboard rendering, live alert display.</div>
+          </div>
+        </li>
+        <li class="arch-layer reveal reveal-d3">
+          <span class="arch-layer-dot arch-layer-dot--green"></span>
+          <div>
+            <div class="arch-layer-name">Core Backend — Node.js / Express.js</div>
+            <div class="arch-layer-desc">Session lifecycle management, sliding-window data fusion, rule engine, SSE alert delivery.</div>
+          </div>
+        </li>
+        <li class="arch-layer reveal reveal-d4">
+          <span class="arch-layer-dot arch-layer-dot--pink"></span>
+          <div>
+            <div class="arch-layer-name">AI Workers — Python 3.x</div>
+            <div class="arch-layer-desc">Isolated Vision, Speech, and NLP processes on our own infrastructure via Redis Pub/Sub. Zero shared memory between pipelines.</div>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="arch-panel arch-panel--right">
+      <div class="reveal"><span class="section-label">Outcomes</span></div>
+      <div class="reveal reveal-d1"><h2 class="section-title">What MeetAI Demonstrated</h2></div>
+      <div class="outcomes-list">
+        <div class="outcome-row reveal reveal-d1">
+          <div class="outcome-metric">3–4s</div>
+          <div>
+            <div class="outcome-title">End-to-End Latency</div>
+            <div class="outcome-body">From hardware frame capture through distributed AI processing to live dashboard alert rendering.</div>
+          </div>
+        </div>
+        <div class="outcome-row reveal reveal-d2">
+          <div class="outcome-metric">10 FPS</div>
+          <div>
+            <div class="outcome-title">Sustained Vision Throughput</div>
+            <div class="outcome-body">Face tracking runs continuously with no memory leak bottlenecks across full session durations.</div>
+          </div>
+        </div>
+        <div class="outcome-row reveal reveal-d3">
+          <div class="outcome-metric">&lt;2s</div>
+          <div>
+            <div class="outcome-title">Report Compilation</div>
+            <div class="outcome-body">Post-meeting analytics generate in under two seconds via incremental time-series writes.</div>
+          </div>
+        </div>
+        <div class="outcome-row reveal reveal-d4">
+          <div class="outcome-metric">0</div>
+          <div>
+            <div class="outcome-title">Raw Media Retained</div>
+            <div class="outcome-body">All audio and video is discarded immediately after feature extraction.</div>
+          </div>
+        </div>
+        <div class="outcome-row reveal reveal-d5">
+          <div class="outcome-metric outcome-metric--green">✓</div>
+          <div>
+            <div class="outcome-title">Modular Architecture Verified</div>
+            <div class="outcome-body">ML models can be fully swapped with zero structural changes to the core orchestrator.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- TEAM                                                         -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<section class="section" id="team">
+  <div class="reveal"><span class="section-label">The Team</span></div>
+  <div class="reveal reveal-d1"><h2 class="section-title">Meet the People Behind MeetAI</h2></div>
+  <p class="section-body reveal reveal-d2">We are senior Computer Engineering students at Işık University. Reach out — we'd love to hear from you.</p>
+
+  <div class="team-grid">
+
+    <div class="team-card reveal reveal-d1">
+      <div class="team-avatar">FA</div>
+      <div class="team-name">Fatih Altınışık</div>
+      <div class="team-role">Computer Engineering, Işık University</div>
+      <div class="team-links">
+        <a class="team-link" href="mailto:fatih_altinisik@outlook.com">✉ Email</a>
+        <a class="team-link" href="https://www.linkedin.com/in/fatih-altinisik/" target="_blank" rel="noopener">in LinkedIn</a>
+      </div>
+    </div>
+
+    <div class="team-card reveal reveal-d2">
+      <div class="team-avatar">HB</div>
+      <div class="team-name">Hasan Berberkayar</div>
+      <div class="team-role">Computer Engineering, Işık University</div>
+      <div class="team-links">
+        <!-- TODO: update Hasan's actual contact info -->
+        <a class="team-link" href="mailto:Hasanberberkyr@gmail.com">✉ Email</a>
+        <a class="team-link" href="https://www.linkedin.com/in/hasan-berberkayar-157b70280" target="_blank" rel="noopener">in LinkedIn</a>
+      </div>
+    </div>
+
+    <div class="team-card reveal reveal-d3">
+      <div class="team-avatar">EK</div>
+      <div class="team-name">Erdem Karaahmet</div>
+      <div class="team-role">Computer Engineering, Işık University</div>
+      <div class="team-links">
+        <!-- TODO: update Erdem's actual contact info -->
+        <a class="team-link" href="mailto:erdemkaraahmet@gmail.com">✉ Email</a>
+        <a class="team-link" href="https://www.linkedin.com/in/erdemkaraahmet" target="_blank" rel="noopener">in LinkedIn</a>
+      </div>
+    </div>
+
+    <div class="supervisor-row reveal reveal-d4">
+      <div class="supervisor-avatar">MA</div>
+      <div>
+        <div class="supervisor-label">Thesis Supervisor</div>
+        <div class="supervisor-name">Prof. Dr. Mehmet Devrim Akça</div>
+        <div class="supervisor-affil">Department of Computer Engineering &nbsp;·&nbsp; Işık University</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- TECH STACK CAROUSEL                                          -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div class="stack-carousel-section reveal">
+  <div class="stack-carousel-label">Technology Stack</div>
+  <div class="stack-carousel-track-wrap">
+    <div class="stack-carousel-track" id="carousel-track">
+      <!-- set 1 -->
+      <div class="stack-item"><img class="stack-logo" src="logolar/nodejs-logo.svg" alt="Node.js"><div class="stack-name">Node.js</div></div>
+      <div class="stack-item"><img class="stack-logo" src="logolar/Python.svg" alt="Python"><div class="stack-name">Python</div></div>
+      <div class="stack-item"><img class="stack-logo" src="logolar/electronjs-logo.svg" alt="Electron.js"><div class="stack-name">Electron.js</div></div>
+      <div class="stack-item"><img class="stack-logo" src="logolar/react-logo.svg" alt="React"><div class="stack-name">React</div></div>
+      <div class="stack-item"><img class="stack-logo" src="logolar/ts-logo-128.svg" alt="TypeScript"><div class="stack-name">TypeScript</div></div>
+      <div class="stack-item"><img class="stack-logo" src="logolar/Express.svg" alt="Express.js"><div class="stack-name">Express.js</div></div>
+      <div class="stack-item"><img class="stack-logo" src="logolar/PostgresSQL.svg" alt="PostgreSQL"><div class="stack-name">PostgreSQL</div></div>
+      <div class="stack-item"><img class="stack-logo" src="logolar/supabase-logo-icon.svg" alt="Supabase"><div class="stack-name">Supabase</div></div>
+      <div class="stack-item"><img class="stack-logo" src="logolar/Redis.svg" alt="Redis"><div class="stack-name">Redis</div></div>
+      <div class="stack-item"><img class="stack-logo" src="logolar/MediaPipe Symbol SVG.svg" alt="MediaPipe"><div class="stack-name">MediaPipe</div></div>
+      <div class="stack-item"><img class="stack-logo" src="logolar/OpenCV.svg" alt="OpenCV"><div class="stack-name">OpenCV</div></div>
+      <div class="stack-item"><img class="stack-logo" src="logolar/openai-whisper-logo.png" alt="Whisper"><div class="stack-name">Whisper</div></div>
+      <div class="stack-item"><img class="stack-logo" src="logolar/speechbrain-logo.svg" alt="SpeechBrain"><div class="stack-name">SpeechBrain</div></div>
+      <div class="stack-item"><img class="stack-logo" src="logolar/pyannote-logo.png" alt="Pyannote"><div class="stack-name">Pyannote</div></div>
+      <div class="stack-item"><img class="stack-logo" src="logolar/qwen-logo.png" alt="Qwen 2.5"><div class="stack-name">Qwen 2.5</div></div>
+      <!-- set 2 — duplicate for seamless loop -->
+      <div class="stack-item"><img class="stack-logo" src="logolar/nodejs-logo.svg" alt="Node.js"><div class="stack-name">Node.js</div></div>
+      <div class="stack-item"><img class="stack-logo" src="logolar/Python.svg" alt="Python"><div class="stack-name">Python</div></div>
+      <div class="stack-item"><img class="stack-logo" src="logolar/electronjs-logo.svg" alt="Electron.js"><div class="stack-name">Electron.js</div></div>
+      <div class="stack-item"><img class="stack-logo" src="logolar/react-logo.svg" alt="React"><div class="stack-name">React</div></div>
+      <div class="stack-item"><img class="stack-logo" src="logolar/ts-logo-128.svg" alt="TypeScript"><div class="stack-name">TypeScript</div></div>
+      <div class="stack-item"><img class="stack-logo" src="logolar/Express.svg" alt="Express.js"><div class="stack-name">Express.js</div></div>
+      <div class="stack-item"><img class="stack-logo" src="logolar/PostgresSQL.svg" alt="PostgreSQL"><div class="stack-name">PostgreSQL</div></div>
+      <div class="stack-item"><img class="stack-logo" src="logolar/supabase-logo-icon.svg" alt="Supabase"><div class="stack-name">Supabase</div></div>
+      <div class="stack-item"><img class="stack-logo" src="logolar/Redis.svg" alt="Redis"><div class="stack-name">Redis</div></div>
+      <div class="stack-item"><img class="stack-logo" src="logolar/MediaPipe Symbol SVG.svg" alt="MediaPipe"><div class="stack-name">MediaPipe</div></div>
+      <div class="stack-item"><img class="stack-logo" src="logolar/OpenCV.svg" alt="OpenCV"><div class="stack-name">OpenCV</div></div>
+      <div class="stack-item"><img class="stack-logo" src="logolar/openai-whisper-logo.png" alt="Whisper"><div class="stack-name">Whisper</div></div>
+      <div class="stack-item"><img class="stack-logo" src="logolar/speechbrain-logo.svg" alt="SpeechBrain"><div class="stack-name">SpeechBrain</div></div>
+      <div class="stack-item"><img class="stack-logo" src="logolar/pyannote-logo.png" alt="Pyannote"><div class="stack-name">Pyannote</div></div>
+      <div class="stack-item"><img class="stack-logo" src="logolar/qwen-logo.png" alt="Qwen 2.5"><div class="stack-name">Qwen 2.5</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- FOOTER                                                       -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div class="footer-outer">
+  <footer class="footer">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <div class="footer-logo">meetai</div>
+        <div class="footer-tagline">Real-time multimodal meeting intelligence for every team.</div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2025–2026 MeetAI Team. Graduation Project.</div>
+      <div class="footer-course">COMP/SOFT 4902 &nbsp;·&nbsp; Işık University &nbsp;·&nbsp; 2025–2026</div>
+    </div>
+  </footer>
+</div>
+
+</div><!-- /site-content -->
+
+<script>
+  // ── Hamburger nav ─────────────────────────────
+  const hamburger = document.getElementById('hamburger');
+  const navDrawer = document.getElementById('nav-drawer');
+
+  hamburger.addEventListener('click', () => {
+    const open = navDrawer.classList.toggle('open');
+    hamburger.classList.toggle('open', open);
+    document.body.style.overflow = open ? 'hidden' : '';
+  });
+
+  navDrawer.querySelectorAll('a').forEach(a => {
+    a.addEventListener('click', () => {
+      navDrawer.classList.remove('open');
+      hamburger.classList.remove('open');
+      document.body.style.overflow = '';
+    });
+  });
+
+  // ── Participants toggle (mobile) ──────────────
+  const participantsToggle = document.getElementById('participants-toggle');
+  const mobileParticipants = document.getElementById('mobile-participants');
+  const toggleChevron = document.getElementById('toggle-chevron');
+
+  participantsToggle.addEventListener('click', () => {
+    const open = mobileParticipants.classList.toggle('open');
+    participantsToggle.setAttribute('aria-expanded', String(open));
+    toggleChevron.style.transform = open ? 'rotate(180deg)' : '';
+  });
+
+  // ── Scroll reveal ─────────────────────────────
+  const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        revealObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12 });
+
+  document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+  // ── Dashboard section collapse (mobile only) ──
+  (function initDashboardCollapse() {
+    const divider = document.getElementById('db-divider');
+    const content = document.getElementById('db-content');
+    if (!divider || !content) return;
+
+    function isMobile() { return window.innerWidth <= 860; }
+
+    // Collapse by default on mobile
+    if (isMobile()) {
+      divider.classList.add('db-collapsed');
+      content.classList.add('db-collapsed');
+      divider.setAttribute('aria-expanded', 'false');
+    }
+
+    divider.addEventListener('click', () => {
+      if (!isMobile()) return;
+      const collapsed = content.classList.toggle('db-collapsed');
+      divider.classList.toggle('db-collapsed', collapsed);
+      divider.setAttribute('aria-expanded', String(!collapsed));
+    });
+
+    // Reset state if viewport resizes past breakpoint
+    window.addEventListener('resize', () => {
+      if (!isMobile()) {
+        divider.classList.remove('db-collapsed');
+        content.classList.remove('db-collapsed');
+        divider.setAttribute('aria-expanded', 'true');
+      }
+    }, { passive: true });
+  })();
+
+  // ── Active nav link on scroll ─────────────────
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.nav-links a');
+
+  const sectionObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.getAttribute('id');
+        navLinks.forEach(link => {
+          link.style.color = link.getAttribute('href') === `#${id}` ? 'var(--accent)' : '';
+        });
+      }
+    });
+  }, { threshold: 0.4 });
+
+  sections.forEach(s => sectionObserver.observe(s));
+</script>
+
+</body>
+</html>
