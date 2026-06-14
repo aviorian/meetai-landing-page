@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <!-- glow blob -->
+  <ellipse cx="600" cy="315" rx="340" ry="220" fill="#367eff" opacity="0.07"/>
+  <!-- blue circle dot -->
+  <circle cx="468" cy="315" r="28" fill="#367eff"/>
+  <!-- meetai wordmark -->
+  <text
+    x="516"
+    y="340"
+    font-family="'DM Sans', 'Inter', sans-serif"
+    font-size="96"
+    font-weight="600"
+    letter-spacing="-2"
+    fill="#0f172a"
+  >meetai</text>
+  <!-- tagline -->
+  <text
+    x="600"
+    y="408"
+    font-family="'DM Sans', 'Inter', sans-serif"
+    font-size="24"
+    font-weight="400"
+    fill="#4a5568"
+    text-anchor="middle"
+    letter-spacing="0.2"
+  >AI-Assisted Online Meeting Optimization &amp; Analytics</text>
+</svg>
